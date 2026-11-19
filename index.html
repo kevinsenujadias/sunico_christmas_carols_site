@@ -6,9 +6,7 @@
   <title>Winter Vespers 2026 · SUNICO Christmas Carols · Tickets</title>
   <meta name="description" content="Book your seats for Winter Vespers 2026 — SUNICO's evening of Christmas carols at Namal Hall, Friday 18 December 2026, 6:30 PM." />
   <link rel="icon" href="assets/img/sunico-logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preload" href="assets/fonts/great-vibes-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -31,14 +29,29 @@
         <svg viewBox="0 0 24 24"><path d="M12 2v20M4.9 6l14.2 12M4.9 18L19.1 6M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5M2.6 9.4l3.8.8-1.3 3.6M21.4 14.6l-3.8-.8 1.3-3.6M2.6 14.6l3.8-.8-1.3-3.6M21.4 9.4l-3.8.8 1.3 3.6"/></svg>
       </button>
       <a class="btn btn-gold btn-sm" href="#seats" data-go="seats">Book now</a>
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </header>
+  <div class="mobile-menu" id="mobileMenu" hidden>
+    <nav>
+      <a href="#home" data-go="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</a>
+      <a href="#seats" data-go="seats"><svg viewBox="0 0 24 24"><path d="M5 11V7a3 3 0 013-3h8a3 3 0 013 3v4M3 11h18v5H3zM6 16v4M18 16v4"/></svg>Choose seats</a>
+      <a href="#tickets" data-go="tickets"><svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/></svg>My tickets <span class="pill" id="menuTicketCount" hidden>0</span></a>
+      <a href="#tiers" data-menu-anchor><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9 10.5c0-1 1.3-1.8 3-1.8s3 .8 3 1.8-1.3 1.6-3 1.6-3 .7-3 1.7 1.3 1.8 3 1.8 3-.8 3-1.8"/></svg>Ticket prices</a>
+      <a href="#admin" data-go="admin" class="muted"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>Staff check-in</a>
+    </nav>
+  </div>
 
   <main>
     <!-- ================= HOME ================= -->
     <section class="view active" id="view-home">
       <div class="hero">
-        <div class="hero-bg" style="background-image:url('assets/img/red-baubles-hall.jpg')"></div>
+        <div class="hero-slides" id="heroSlides">
+          <div class="hero-bg on" style="background-image:url('assets/img/choir-candles.jpg')" data-cap="Candlelight carols"></div>
+          <div class="hero-bg" style="background-image:url('assets/img/red-baubles-hall.jpg')" data-cap="A hall dressed for Christmas"></div>
+          <div class="hero-bg" style="background-image:url('assets/img/choir-stage.jpg')" data-cap="The choir on stage"></div>
+          <div class="hero-bg" style="background-image:url('assets/img/carolers-santa-hats.jpg')" data-cap="Carols in Santa hats"></div>
+        </div>
         <div class="hero-shade"></div>
 
         <!-- hanging ornaments -->
@@ -75,6 +88,8 @@
             <a class="btn btn-ghost btn-lg" href="#tiers">See ticket tiers</a>
           </div>
         </div>
+        <div class="hero-dots" id="heroDots" aria-label="Background photos"></div>
+        <p class="hero-tip" aria-hidden="true">Tap the ornaments · click anywhere for snow</p>
         <div class="scroll-hint" aria-hidden="true"><span></span></div>
         <svg class="tree-line" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true"><path id="treePath" d=""/></svg>
       </div>
@@ -126,20 +141,41 @@
         </div>
       </section>
 
+      <!-- Moments strip -->
+      <section class="moments" id="moments" aria-label="Moments from past carols">
+        <div class="block-head reveal">
+          <p class="eyebrow">Carols through the years</p>
+          <h2>Voices, candles &amp; <em>Christmas cheer</em></h2>
+        </div>
+        <div class="marquee" id="marquee">
+          <div class="marquee-track" id="marqueeTrack"></div>
+        </div>
+        <p class="marquee-tip">Drag to browse · tap a photo to open it</p>
+      </section>
+
       <!-- Gallery -->
       <section class="block" id="gallery">
         <div class="block-head reveal">
           <p class="eyebrow">The look of the night</p>
           <h2>A hall dressed in <em>winter</em></h2>
         </div>
-        <div class="gallery">
-          <figure class="g g-tall reveal"><img src="assets/img/snowflake-hallway.jpg" alt="Hallway with hanging paper snowflakes" loading="lazy" /><figcaption>The snowflake walk-in</figcaption></figure>
-          <figure class="g g-wide reveal" data-delay="1"><img src="assets/img/sleigh-reindeer.jpg" alt="Wooden sleigh and reindeer" loading="lazy" /><figcaption>Santa's sleigh at the foyer</figcaption></figure>
-          <figure class="g reveal" data-delay="2"><img src="assets/img/light-snowmen.jpg" alt="Light-up snowmen" loading="lazy" /><figcaption>The snowman family</figcaption></figure>
-          <figure class="g reveal"><img src="assets/img/snowman-jars.jpg" alt="Snowman jars" loading="lazy" /><figcaption>Little snowman jars</figcaption></figure>
-          <figure class="g g-tall reveal" data-delay="1"><img src="assets/img/red-baubles-hall.jpg" alt="Hall with red baubles and snowflakes" loading="lazy" /><figcaption>Red baubles overhead</figcaption></figure>
-          <figure class="g reveal" data-delay="2"><img src="assets/img/snowflakes-hanging.jpg" alt="Hanging snowflakes" loading="lazy" /><figcaption>Silver snowfall</figcaption></figure>
-          <figure class="g reveal"><img src="assets/img/snowflake-single.jpg" alt="Single snowflake ornament" loading="lazy" /><figcaption>One flake at a time</figcaption></figure>
+        <div class="g-filters" id="gFilters" role="tablist">
+          <button class="on" data-cat="all">All</button>
+          <button data-cat="choir">Choir</button>
+          <button data-cat="decor">Decorations</button>
+          <button data-cat="festive">Festive</button>
+        </div>
+        <div class="gallery" id="gallery-grid">
+          <figure class="g g-wide g-tall reveal" data-cat="choir"><img src="assets/img/choir-candles.jpg" alt="Choir singing by candlelight" loading="lazy" /><figcaption>Candlelight carols</figcaption></figure>
+          <figure class="g g-tall reveal" data-delay="1" data-cat="decor"><img src="assets/img/snowflake-hallway.jpg" alt="Hallway with hanging paper snowflakes" loading="lazy" /><figcaption>The snowflake walk-in</figcaption></figure>
+          <figure class="g reveal" data-delay="2" data-cat="choir"><img src="assets/img/choir-stage.jpg" alt="Choir in robes singing on stage" loading="lazy" /><figcaption>The choir on stage</figcaption></figure>
+          <figure class="g reveal" data-cat="festive"><img src="assets/img/carolers-santa-hats.jpg" alt="Carolers in Santa hats" loading="lazy" /><figcaption>Carols in Santa hats</figcaption></figure>
+          <figure class="g g-wide reveal" data-delay="1" data-cat="festive"><img src="assets/img/sleigh-reindeer.jpg" alt="Wooden sleigh and reindeer" loading="lazy" /><figcaption>Santa's sleigh at the foyer</figcaption></figure>
+          <figure class="g g-tall reveal" data-delay="2" data-cat="decor"><img src="assets/img/red-baubles-hall.jpg" alt="Hall with red baubles and snowflakes" loading="lazy" /><figcaption>Red baubles overhead</figcaption></figure>
+          <figure class="g reveal" data-delay="1" data-cat="decor"><img src="assets/img/light-snowmen.jpg" alt="Light-up snowmen" loading="lazy" /><figcaption>The snowman family</figcaption></figure>
+          <figure class="g reveal" data-delay="2" data-cat="decor"><img src="assets/img/snowman-jars.jpg" alt="Snowman jars" loading="lazy" /><figcaption>Little snowman jars</figcaption></figure>
+          <figure class="g reveal" data-cat="decor"><img src="assets/img/snowflakes-hanging.jpg" alt="Hanging snowflakes" loading="lazy" /><figcaption>Silver snowfall</figcaption></figure>
+          <figure class="g reveal" data-delay="1" data-cat="decor"><img src="assets/img/snowflake-single.jpg" alt="Single snowflake ornament" loading="lazy" /><figcaption>One flake at a time</figcaption></figure>
         </div>
       </section>
 
@@ -169,6 +205,7 @@
     <!-- ================= SEATS ================= -->
     <section class="view" id="view-seats">
       <div class="page-head">
+        <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
         <div class="steps">
           <span class="step on">1 · Seats</span><i></i><span class="step">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
         </div>
@@ -180,20 +217,22 @@
         <div class="map-card">
           <div class="map-toolbar">
             <div class="legend" id="legend">
+              <button class="lg active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>Whole hall</button>
               <button class="lg" data-filter="gold"><i class="sw gold"></i>Gold <b>Rs.1,500</b></button>
               <button class="lg" data-filter="silver"><i class="sw silver"></i>Silver <b>Rs.1,000</b></button>
-              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Bronze <b>Rs.750</b></button>
+              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Gallery <b>Rs.750</b></button>
               <span class="lg static"><i class="sw sel"></i>Your pick</span>
-              <span class="lg static"><i class="sw taken"></i>Taken</span>
-            </div>
-            <div class="zoom">
-              <button class="icon-btn" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-              <button class="icon-btn" id="zoomReset" aria-label="Reset zoom"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg></button>
-              <button class="icon-btn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+              <span class="lg static"><i class="sw taken"></i>Booked</span>
             </div>
           </div>
 
+          <p class="map-hint"><span class="h-out">Pick a section above, or tap any part of the hall to zoom in</span><span class="h-zoomed">Drag to move · tap a seat to pick it · <b>Whole hall</b> zooms out</span></p>
           <div class="map-wrap" id="mapWrap">
+            <div class="zoom" aria-label="Zoom">
+              <button class="icon-btn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+              <button class="icon-btn" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <button class="icon-btn" id="zoomReset" aria-label="Show the whole hall"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg></button>
+            </div>
             <svg id="hall" viewBox="0 0 1000 860" role="img" aria-label="Namal Hall seating plan"></svg>
             <div class="tooltip" id="tooltip"></div>
           </div>
@@ -246,6 +285,7 @@
     <!-- ================= CHECKOUT ================= -->
     <section class="view" id="view-checkout">
       <div class="page-head">
+        <button class="back-btn" data-go="seats" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Back to seats</button>
         <div class="steps">
           <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
         </div>
@@ -314,13 +354,14 @@
     <!-- ================= TICKETS ================= -->
     <section class="view" id="view-tickets">
       <div class="page-head">
+        <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
         <div class="steps">
           <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Checkout</span><i></i><span class="step on">3 · Tickets</span>
         </div>
         <h2 id="ticketsTitle">Your tickets</h2>
-        <p class="lead" id="ticketsLead">Drag a stub to the left, or press <b>Tear</b>, to see how it works at the door.</p>
+        <p class="lead" id="ticketsLead">Show the QR code at the door. Staff scan it to check you in. (Drag a stub to the left, or press <b>Tear</b>, for fun.)</p>
       </div>
-      <div class="tickets" id="tickets"></div>
+      <div class="tickets" id="ticketList"></div>
       <div class="tickets-empty" id="ticketsEmpty" hidden>
         <img src="assets/img/coin-silver.png" alt="" class="ghost-coin" />
         <p>No tickets yet.</p>
@@ -329,6 +370,71 @@
       <div class="tickets-actions" id="ticketsActions" hidden>
         <button class="btn btn-ghost" id="printBtn">Print tickets</button>
         <a class="btn btn-gold" href="#seats" data-go="seats">Book more seats</a>
+      </div>
+
+      <div class="find-card">
+        <div>
+          <h3>Booked on another phone?</h3>
+          <p>Enter your booking number and the phone number you used, and we'll bring up your tickets.</p>
+        </div>
+        <form id="findForm" class="find-form" autocomplete="off">
+          <label class="field"><span>Booking number</span><input name="ref" required placeholder="WV-XXXXXX" style="text-transform:uppercase" /></label>
+          <label class="field"><span>Phone number</span><input name="phone" type="tel" required placeholder="07X XXX XXXX" /></label>
+          <button class="btn btn-gold" type="submit">Find my tickets</button>
+          <p class="form-error" id="findMsg" hidden></p>
+        </form>
+      </div>
+    </section>
+    <!-- ================= STAFF ================= -->
+    <section class="view" id="view-admin">
+      <div class="page-head">
+        <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
+        <p class="eyebrow">Staff only</p>
+        <h2>Bookings &amp; <em>door check-in</em></h2>
+      </div>
+
+      <div class="admin-gate" id="adminGate">
+        <form id="pinForm" class="pin-card">
+          <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+          <h3>Enter staff PIN</h3>
+          <label class="field"><input id="pinInput" type="password" inputmode="numeric" placeholder="••••" autocomplete="off" /></label>
+          <button class="btn btn-gold btn-block" type="submit">Unlock</button>
+          <p class="note">Demo PIN is 2026. Change it in js/app.js.</p>
+        </form>
+      </div>
+
+      <div class="admin" id="adminPanel" hidden>
+        <div class="stats" id="stats"></div>
+
+        <div class="checkin">
+          <div class="ci-left">
+            <h3>Door check-in</h3>
+            <p class="lead small">Scan the QR on the ticket, or type the ticket number (e.g. <span class="mono">WV-7K3QX9-C4</span>) or a booking number to see all its tickets.</p>
+            <form id="ciForm" class="ci-form">
+              <input id="ciInput" placeholder="Ticket or booking number" autocomplete="off" style="text-transform:uppercase" />
+              <button class="btn btn-gold" type="submit">Check in</button>
+            </form>
+            <button class="btn btn-ghost btn-block" id="scanBtn" type="button">Scan QR with camera</button>
+            <div class="ci-cam" id="ciCam" hidden><video id="ciVideo" playsinline muted></video><span class="ci-frame"></span></div>
+          </div>
+          <div class="ci-result" id="ciResult" hidden></div>
+        </div>
+
+        <div class="bk-table-card">
+          <div class="bk-tools">
+            <h3>All bookings <small id="bkCount"></small></h3>
+            <input id="bkSearch" placeholder="Search name, phone, booking no. or seat" />
+            <button class="btn btn-ghost btn-sm" id="csvBtn">Export CSV</button>
+            <button class="btn btn-ghost btn-sm" id="lockBtn">Lock</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Booking</th><th>Name</th><th>Contact</th><th>Seats</th><th>Amount</th><th>Payment</th><th>In</th><th>Booked</th></tr></thead>
+              <tbody id="bkBody"></tbody>
+            </table>
+          </div>
+          <p class="note">Records are saved in this browser for now. To share them across staff phones and the PayHere confirmation, connect a database (see js/db.js).</p>
+        </div>
       </div>
     </section>
   </main>
@@ -339,7 +445,7 @@
       <p><span class="script">Winter Vespers</span> · SUNICO Christmas Carols 2026</p>
     </div>
     <p class="small">Namal Hall · Friday 18 December 2026 · 6:30 PM</p>
-    <button class="link-btn small" id="resetDemo">Reset demo bookings</button>
+    <div class="foot-links"><a class="link-btn small" href="#admin" data-go="admin">Staff check-in</a><button class="link-btn small" id="resetDemo">Reset demo bookings</button></div>
   </footer>
 
   <!-- payment processing modal -->
@@ -352,11 +458,20 @@
   </div>
 
   <!-- lightbox -->
-  <div class="lightbox" id="lightbox" hidden><img alt="" /><button class="icon-btn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-label="Photo viewer">
+    <figure class="lb-fig"><img alt="" /><figcaption><span class="lb-cap"></span><span class="lb-count"></span></figcaption></figure>
+    <button class="icon-btn lb-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="icon-btn lb-prev" aria-label="Previous photo"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="icon-btn lb-next" aria-label="Next photo"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <div class="lb-thumbs"></div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
+  <script src="js/vendor/qrcode.js"></script>
+  <script src="js/vendor/jsQR.js"></script>
   <script src="js/snow.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/payment.js"></script>
   <script src="js/app.js"></script>
 </body>

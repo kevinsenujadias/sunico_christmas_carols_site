@@ -27,6 +27,7 @@
       swaySpeed: 0.004 + Math.random() * 0.012,
       swayAmp: (0.2 + depth * 0.8) * dpr,
       a: 0.35 + depth * 0.6,
+      vx: 0,
       depth
     };
   }
@@ -37,7 +38,9 @@
     for (const f of flakes) {
       f.sway += f.swaySpeed;
       f.y += f.vy;
-      f.x += Math.sin(f.sway) * f.swayAmp + wind * (0.4 + f.depth) * dpr;
+      f.x += Math.sin(f.sway) * f.swayAmp + wind * (0.4 + f.depth) * dpr + f.vx;
+      if (f.vx) { f.vx *= 0.96; if (Math.abs(f.vx) < 0.01) f.vx = 0; }
+      if (f.vy0 && f.vy > f.vy0) f.vy = Math.max(f.vy0, f.vy * 0.97);
       if (f.y > H + 10) Object.assign(f, make(false));
       if (f.x > W + 10) f.x = -10;
       if (f.x < -10) f.x = W + 10;
@@ -69,6 +72,17 @@
         f.y = -Math.random() * H * 0.4; f.vy *= 1.8; flakes.push(f);
       }
       setTimeout(resize, 9000);
+    },
+    burstAt(cx, cy) {   // a puff of snow from a point (screen px)
+      if (!running) return;
+      for (let i = 0; i < 36; i++) {
+        const f = make(false), a = Math.random() * Math.PI * 2, sp = (1.5 + Math.random() * 4) * dpr;
+        f.x = cx * dpr; f.y = cy * dpr; f.vx = Math.cos(a) * sp;
+        f.vy0 = f.vy; f.vy = Math.max(f.vy, Math.sin(a) * sp * 0.6 + f.vy);
+        f.a = Math.min(1, f.a + 0.3);
+        flakes.push(f);
+      }
+      clearTimeout(this._t); this._t = setTimeout(resize, 8000);
     },
     get on() { return running; }
   };

@@ -23,19 +23,19 @@ window.Payment = (function () {
   const NOTIFY_URL = 'https://your-domain.lk/api/payhere/notify';
 
   function demo(order) {
-    return new Promise(resolve => setTimeout(() => resolve({ status: 'success', demo: true, orderId: order.id }), 2200));
+    return new Promise(resolve => setTimeout(() => resolve({ status: 'success', demo: true, paymentId: null }), 2200));
   }
 
   async function live(order) {
     if (typeof payhere === 'undefined') throw new Error('PayHere script not loaded');
     const res = await fetch(HASH_ENDPOINT, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_id: order.id, amount: order.total.toFixed(2), currency: 'LKR' })
+      body: JSON.stringify({ order_id: order.ref, amount: order.amount.toFixed(2), currency: 'LKR' })
     });
     const { hash } = await res.json();
 
     return new Promise((resolve, reject) => {
-      payhere.onCompleted = id => resolve({ status: 'success', orderId: id });
+      payhere.onCompleted = id => resolve({ status: 'success', paymentId: id });
       payhere.onDismissed = () => reject(new Error('Payment was closed before finishing'));
       payhere.onError = err => reject(new Error(err));
       payhere.startPayment({
@@ -44,9 +44,9 @@ window.Payment = (function () {
         return_url: undefined,             // popup mode
         cancel_url: undefined,
         notify_url: NOTIFY_URL,
-        order_id: order.id,
-        items: `Winter Vespers 2026 — ${order.seats.length} seat(s): ${order.seats.map(s => s.id).join(', ')}`,
-        amount: order.total.toFixed(2),
+        order_id: order.ref,
+        items: `Winter Vespers 2026 — ${order.tickets.length} seat(s): ${order.tickets.map(t => t.seat).join(', ')}`,
+        amount: order.amount.toFixed(2),
         currency: 'LKR',
         hash,
         first_name: order.customer.first,
@@ -56,7 +56,7 @@ window.Payment = (function () {
         address: 'N/A',
         city: 'Colombo',
         country: 'Sri Lanka',
-        custom_1: order.seats.map(s => s.id).join(',')
+        custom_1: order.tickets.map(t => t.seat).join(',')
       });
     });
   }
