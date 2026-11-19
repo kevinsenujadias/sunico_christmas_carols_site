@@ -9,8 +9,8 @@
     name: 'Winter Vespers',
     year: 2026,
     venue: 'Namal Hall',
-    dateISO: '2026-12-18T18:30:00+05:30',
-    day: 'Friday', dayNum: 18, month: 'December', time: '6:30 PM'
+    dateISO: '2026-12-18T16:30:00+05:30',
+    day: 'Friday', dayNum: 18, month: 'December', time: '4:30 PM'
   };
   const TIERS = {
     gold:   { label: 'Gold',   price: 3500, coin: 'assets/img/coin-gold.png' },
@@ -64,8 +64,8 @@
      ========================================================= */
   const hall = $('#hall');
   const CX = 500, CY = -1100;              // centre of the curved rows (far behind the stage)
-  const FLOOR_R0 = 1300, ROW_GAP = 46, GALLERY_GAP = 120;
-  const SEAT_STEP = 32, AISLE = 1.9;
+  const FLOOR_R0 = 1300, ROW_GAP = 50, GALLERY_GAP = 110;
+  const SEAT_STEP = 35, AISLE = 1.7;
   const FLOOR_ROWS = ROWS.filter(r => r.zone === 'floor').length;
   const GAL_ROWS = ROWS.length - FLOOR_ROWS;
   const radiusOf = (zone, i) => zone === 'floor'
@@ -162,20 +162,20 @@
           'aria-label': `Row ${seat.row} seat ${num}, ${TIERS[seat.tier].label}, ${rs(TIERS[seat.tier].price)}${taken ? ', taken' : ''}`
         }, gSeats);
         // invisible, larger tap area so seats are easy to hit on phones
-        svgEl('rect', { x: -16, y: -15, width: 32, height: 32, fill: 'transparent', class: 's-hit' }, g);
+        svgEl('rect', { x: -17.5, y: -18, width: 35, height: 38, fill: 'transparent', class: 's-hit' }, g);
         // inner group so CSS scale doesn't fight the transform attribute
         const inner = svgEl('g', { class: 'seat-in' }, g);
-        svgEl('rect', { x: -13, y: 7, width: 26, height: 7, rx: 2.5, class: 's-back' }, inner);
-        svgEl('rect', { x: -13, y: -12, width: 26, height: 21, rx: 6, class: 's-body' }, inner);
-        svgEl('path', { d: 'M-5.5 -7 L5.5 4 M5.5 -7 L-5.5 4', class: 's-x' }, inner);
-        svgEl('path', { d: 'M-6.5 -1.5 L-2 3 L6.5 -6', class: 's-check' }, inner);
-        const n = svgEl('text', { x: 0, y: 3, 'text-anchor': 'middle', class: 's-num' }, inner);
+        svgEl('rect', { x: -15, y: 9, width: 30, height: 7, rx: 2.5, class: 's-back' }, inner);
+        svgEl('rect', { x: -15, y: -14, width: 30, height: 25, rx: 7, class: 's-body' }, inner);
+        svgEl('path', { d: 'M-6.5 -8 L6.5 5 M6.5 -8 L-6.5 5', class: 's-x' }, inner);
+        svgEl('path', { d: 'M-7.5 -1.5 L-2.5 3.5 L7.5 -7', class: 's-check' }, inner);
+        const n = svgEl('text', { x: 0, y: 3.5, 'text-anchor': 'middle', class: 's-num' }, inner);
         n.textContent = num;
         seat.el = g;
         seats.set(id, seat);
 
         if (i === 0 || i === units.length - 1) {
-          const off = (i === 0 ? -1.35 : 1.35) * SEAT_STEP / R;
+          const off = (i === 0 ? -1.2 : 1.2) * SEAT_STEP / R;
           const lx = CX + R * Math.sin(theta + off), ly = CY + R * Math.cos(theta + off);
           const t = svgEl('text', { x: lx.toFixed(1), y: (ly + 5).toFixed(1), 'text-anchor': 'middle', class: 'row-lbl' }, hall);
           t.textContent = rowDef.row;
@@ -241,6 +241,7 @@
     view.cy = clampC(view.cy, h, BASE.h);
     hall.setAttribute('viewBox', `${(view.cx - w / 2).toFixed(1)} ${(view.cy - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
     mapWrap.classList.toggle('pannable', view.z > 1);
+    drawMini();
     mapWrap.classList.toggle('zoomed', view.z > 1.05);
   }
   function zoomTo(z, cx, cy) {
@@ -263,6 +264,7 @@
       const k = Math.min(1, (now - t0) / 380), e = 1 - Math.pow(1 - k, 3);
       const cw = from.w + (to.w - from.w) * e;
       hall.setAttribute('viewBox', `${from.x + (to.x - from.x) * e} ${from.y + (to.y - from.y) * e} ${cw} ${cw * ar}`);
+      drawMini();
       if (k < 1) animRaf = requestAnimationFrame(step); else applyView();
     })(t0);
   }
@@ -274,9 +276,58 @@
   }
   // on small screens seats are tiny when the whole hall is shown, so a tap zooms in first
   const smallScreen = () => hall.getBoundingClientRect().width < 640;
-  const tapZoom = () => Math.min(3, 1000 / 380);   // about 12 seats across
+  // zoom where one seat is ~30px wide on screen (about 11 seats across a phone)
+  const tapZoom = () => Math.min(3.2, Math.max(2.2, BASE.w / Math.max(300, mapWrap.clientWidth)));
+
+  /* mini map (phones): where you are in the hall; tap/drag it to jump */
+  const mini = document.getElementById('minimap');
+  const MINI_COL = { gold: '#e7bd5a', silver: '#cdd6e2', bronze: '#c47f4e' };
+  function drawMini() {
+    if (!mini || !fitMode() || !mapWrap.classList.contains('zoomed')) return;
+    const dpr = Math.min(2, devicePixelRatio || 1), cw = mini.clientWidth, ch = mini.clientHeight;
+    if (!cw) return;
+    if (mini.width !== cw * dpr) { mini.width = cw * dpr; mini.height = ch * dpr; }
+    const c = mini.getContext('2d'), k = cw / BASE.w;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, cw, ch);
+    c.fillStyle = 'rgba(246,220,147,.55)'; c.fillRect(cw * .22, 1, cw * .56, 4);           // stage
+    seats.forEach(st => {
+      c.fillStyle = picked.has(st.id) ? '#34d399' : st.taken ? '#e8203f' : MINI_COL[st.tier];
+      c.fillRect(st.x * k - 1.3, st.y * k - 1.1, 2.6, 2.2);
+    });
+    const vb = hall.viewBox.baseVal;
+    c.strokeStyle = '#fff'; c.lineWidth = 1.5;
+    c.strokeRect(Math.max(.75, vb.x * k), Math.max(.75, vb.y * k), Math.min(cw - 1.5, vb.width * k), Math.min(ch - 1.5, vb.height * k));
+  }
+  function bindMini() {
+    if (!mini) return;
+    mini.style.aspectRatio = `1000 / ${HALL_H}`;
+    let down = false;
+    const move = e => {
+      const r = mini.getBoundingClientRect();
+      view.cx = (e.clientX - r.left) / r.width * BASE.w;
+      view.cy = (e.clientY - r.top) / r.height * BASE.h;
+      applyView();
+    };
+    mini.addEventListener('pointerdown', e => { e.stopPropagation(); down = true; mini.setPointerCapture(e.pointerId); move(e); });
+    mini.addEventListener('pointermove', e => { if (down) { e.stopPropagation(); move(e); } });
+    mini.addEventListener('pointerup', e => { down = false; e.stopPropagation(); });
+    mini.addEventListener('click', e => e.stopPropagation());
+  }
+  /* phones open the seat map already zoomed in at the front of the hall, seats ~30px */
+  let phoneStarted = false;
+  function phoneStart() {
+    if (!fitMode() || phoneStarted || !mapWrap.clientWidth) return;
+    phoneStarted = true;
+    mapWrap.classList.add('zoomed');
+    view.z = tapZoom(); view.cx = BASE.w / 2;
+    view.cy = viewSize().h / 2;                     // top of the hall: stage + front rows
+    $$('#legend [data-filter]').forEach(b => b.classList.remove('active'));
+    applyView();
+  }
 
   function bindMap() {
+    bindMini();
     const pts = new Map();            // active pointers (for pinch)
     let drag = null, pinch = null, moved = false;
 
@@ -341,7 +392,7 @@
     });
     hall.addEventListener('pointerover', e => { if (e.pointerType === 'touch') return; const g = e.target.closest('.seat'); if (g) showTip(seats.get(g.dataset.id)); });
     hall.addEventListener('pointerout', e => { if (e.target.closest('.seat')) hideTip(); });
-    hall.addEventListener('focusin', e => { const g = e.target.closest('.seat'); if (g) showTip(seats.get(g.dataset.id)); });
+    hall.addEventListener('focusin', e => { if (matchMedia('(hover: none)').matches) return; const g = e.target.closest('.seat'); if (g) showTip(seats.get(g.dataset.id)); });
     hall.addEventListener('focusout', hideTip);
     hall.addEventListener('wheel', e => {
       if (!(e.ctrlKey || e.metaKey)) return;
@@ -445,6 +496,7 @@
       shownTotal = total;
     }
     picked.size ? startHold() : stopHold();
+    drawMini();
   }
 
   /* seats-left counters on tier cards */
@@ -847,6 +899,7 @@
     const next = $('#view-' + v);
     if (cur !== next) { cur?.classList.remove('active'); next.classList.add('active'); }
     $$('.nav-links a, #mobileMenu a').forEach(a => a.classList.toggle('on', a.dataset.go === v));
+    if (v === 'seats') requestAnimationFrame(phoneStart);
     if (v === 'checkout') renderCheckout();
     if (v === 'tickets') renderTickets();
     if (v === 'admin') renderAdmin(); else if (typeof stopScan === 'function' && camStream) stopScan();

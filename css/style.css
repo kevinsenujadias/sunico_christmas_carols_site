@@ -249,7 +249,7 @@ em{font-style:italic;font-family:var(--f-serif);color:var(--gold-2)}
 /* ---------- page heads / steps ---------- */
 .page-head{max-width:1240px;margin:0 auto;padding:7.5rem clamp(1rem,5vw,4rem) 1.8rem}
 .page-head h2{margin-top:1rem}
-#view-seats .page-head{max-width:1320px;padding-left:clamp(.6rem,3vw,2.5rem);padding-right:clamp(.6rem,3vw,2.5rem)}
+#view-seats .page-head{max-width:1440px;padding-left:clamp(.6rem,3vw,2.5rem);padding-right:clamp(.6rem,3vw,2.5rem)}
 .map-hint{display:none}
 @media (max-width:700px){
   .map-hint{display:block;text-align:center;font-size:.8rem;color:var(--muted);padding:.6rem .5rem 0}
@@ -268,7 +268,7 @@ em{font-style:italic;font-family:var(--f-serif);color:var(--gold-2)}
 .step.done::before{content:"✓ ";color:var(--gold)}
 
 /* ---------- seat map ---------- */
-.seat-layout{max-width:1320px;margin:0 auto;padding:0 clamp(.6rem,3vw,2.5rem) 5rem;display:grid;grid-template-columns:1fr 320px;gap:1.4rem;align-items:start}
+.seat-layout{max-width:1440px;margin:0 auto;padding:0 clamp(.6rem,3vw,2.5rem) 5rem;display:grid;grid-template-columns:1fr 300px;gap:1.4rem;align-items:start}
 .map-card{border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--line);overflow:hidden}
 .map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .legend{display:flex;gap:.4rem;flex-wrap:wrap}
@@ -289,7 +289,7 @@ button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,
 .map-wrap{position:relative;padding:.5rem;touch-action:pan-y;user-select:none;cursor:default}
 .map-wrap.pannable{cursor:grab;touch-action:none}
 .map-wrap.panning{cursor:grabbing}
-#hall{stroke:none;display:block;width:100%;height:auto;max-height:calc(100svh - 210px);margin:0 auto}
+#hall{stroke:none;display:block;width:100%;height:auto;max-height:calc(100svh - 150px);margin:0 auto}
 #hall text{font-family:var(--f-sans);fill:var(--dim);font-size:13px;font-weight:600;stroke:none;user-select:none}
 #hall .stage-label{fill:#fff4d6;font-family:var(--f-serif);font-size:24px;letter-spacing:10px;font-weight:600}
 #hall .stage-sub{fill:rgba(255,244,214,.6);font-size:11px;letter-spacing:4px;font-weight:500}
@@ -310,7 +310,7 @@ button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,
 .seat.taken .s-back{fill:#6d0a1a}
 .seat.taken .s-x{display:block}
 .seat .s-x{display:none;stroke:#fff;stroke-width:2.8}
-#hall .s-num{font-size:10px;font-weight:700;fill:rgba(10,15,31,.55);pointer-events:none}
+#hall .s-num{font-size:13px;font-weight:700;fill:rgba(10,15,31,.72);pointer-events:none}
 .seat.taken .s-num,.seat.picked .s-num{display:none}
 .seat .s-hit{pointer-events:all}
 .seat.taken:hover .seat-in{transform:none}
@@ -830,4 +830,11 @@ tr.bk-row:hover{background:rgba(255,255,255,.04)}
   .best .btn-outline{flex:1 1 100%;width:100%}
   #view-seats{padding-bottom:6.5rem}
   .mbar{left:.5rem;right:.5rem;bottom:.5rem}
+}
+
+/* mini map (phones, zoomed in) */
+.minimap{display:none}
+@media (max-width:700px){
+  .map-wrap.zoomed .minimap{display:block;position:absolute;left:.5rem;bottom:.5rem;z-index:4;width:104px;height:auto;
+    border-radius:10px;background:rgba(10,15,31,.88);border:1px solid var(--line-2);box-shadow:0 8px 20px rgba(0,0,0,.5);touch-action:none;cursor:pointer}
 }
