@@ -19,7 +19,7 @@
      createdAt: ISO string,
      customer: { first, last, email, phone, role, student },
      tickets: [{ ticketId:'WV-7K3QX9-C4', seat:'C4', row:'C', num:4,
-                 tier:'gold', price:1500, checkedInAt:null }]
+                 tier:'gold', price:3500, checkedInAt:null }]
    }
    ========================================================= */
 window.DB = (function () {

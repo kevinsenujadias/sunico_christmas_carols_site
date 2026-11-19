@@ -13,9 +13,9 @@
     day: 'Friday', dayNum: 18, month: 'December', time: '6:30 PM'
   };
   const TIERS = {
-    gold:   { label: 'Gold',   price: 1500, coin: 'assets/img/coin-gold.png' },
-    silver: { label: 'Silver', price: 1000, coin: 'assets/img/coin-silver.png' },
-    bronze: { label: 'Bronze', price: 750,  coin: 'assets/img/coin-bronze.png' }
+    gold:   { label: 'Gold',   price: 3500, coin: 'assets/img/coin-gold.png' },
+    silver: { label: 'Silver', price: 2500, coin: 'assets/img/coin-silver.png' },
+    bronze: { label: 'Bronze', price: 1500, coin: 'assets/img/coin-bronze.png' }
   };
   const MAX_SEATS = 10;
   const HOLD_SECONDS = 10 * 60;
