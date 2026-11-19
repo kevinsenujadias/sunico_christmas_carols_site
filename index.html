@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Winter Vespers 2026 · SUNICO Christmas Carols · Tickets</title>
+  <meta name="description" content="Book your seats for Winter Vespers 2026 — SUNICO's evening of Christmas carols at Namal Hall, Friday 18 December 2026, 6:30 PM." />
+  <link rel="icon" href="assets/img/sunico-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Falling snow (whole page) -->
+  <canvas id="snow" aria-hidden="true"></canvas>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <a class="brand" href="#home" data-go="home">
+      <img src="assets/img/sunico-logo.png" alt="SUNICO" />
+      <span class="brand-text"><span class="script">Winter Vespers</span><small>SUNICO · 2026</small></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#home" data-go="home">Home</a>
+      <a href="#seats" data-go="seats">Seats</a>
+      <a href="#tickets" data-go="tickets">My Tickets <span class="pill" id="navTicketCount" hidden>0</span></a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="snowToggle" title="Toggle snow" aria-label="Toggle snow">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M4.9 6l14.2 12M4.9 18L19.1 6M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5M2.6 9.4l3.8.8-1.3 3.6M21.4 14.6l-3.8-.8 1.3-3.6M2.6 14.6l3.8-.8-1.3-3.6M21.4 9.4l-3.8.8 1.3 3.6"/></svg>
+      </button>
+      <a class="btn btn-gold btn-sm" href="#seats" data-go="seats">Book now</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= HOME ================= -->
+    <section class="view active" id="view-home">
+      <div class="hero">
+        <div class="hero-bg" style="background-image:url('assets/img/red-baubles-hall.jpg')"></div>
+        <div class="hero-shade"></div>
+
+        <!-- hanging ornaments -->
+        <div class="ornaments" aria-hidden="true">
+          <span class="orn o1"><i></i></span>
+          <span class="orn o2 gold"><i></i></span>
+          <span class="orn o3"><i></i></span>
+          <span class="orn o4 silver"><i></i></span>
+          <span class="orn o5 gold"><i></i></span>
+          <span class="orn o6"><i></i></span>
+        </div>
+
+        <div class="hero-inner">
+          <p class="eyebrow reveal">SUNICO presents · An evening of Christmas carols</p>
+          <h1 class="hero-title reveal" data-delay="1"><span class="script shimmer">Winter Vespers</span><span class="year">2026</span></h1>
+          <p class="hero-sub reveal" data-delay="2">Hark! The Herald Angels are Singing</p>
+
+          <div class="hero-meta reveal" data-delay="3">
+            <div><span>When</span><strong>Fri, 18 December 2026</strong></div>
+            <div><span>Time</span><strong>6:30 PM</strong></div>
+            <div><span>Where</span><strong>Namal Hall</strong></div>
+          </div>
+
+          <div class="countdown reveal" data-delay="4" id="countdown">
+            <div><b data-cd="d">00</b><span>Days</span></div>
+            <div><b data-cd="h">00</b><span>Hours</span></div>
+            <div><b data-cd="m">00</b><span>Minutes</span></div>
+            <div><b data-cd="s">00</b><span>Seconds</span></div>
+          </div>
+
+          <div class="hero-cta reveal" data-delay="5">
+            <a class="btn btn-gold btn-lg" href="#seats" data-go="seats">Choose your seats
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn btn-ghost btn-lg" href="#tiers">See ticket tiers</a>
+          </div>
+        </div>
+        <div class="scroll-hint" aria-hidden="true"><span></span></div>
+        <svg class="tree-line" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true"><path id="treePath" d=""/></svg>
+      </div>
+
+      <!-- Tiers -->
+      <section class="block" id="tiers">
+        <div class="block-head reveal">
+          <p class="eyebrow">Three coins · three ways to listen</p>
+          <h2>Pick your <em>tier</em></h2>
+          <p class="lead">Seats closest to the stage carry the Gold coin. Every seat in Namal Hall has a clear line to the choir.</p>
+        </div>
+        <div class="tier-grid">
+          <article class="tier-card reveal" data-tier="gold">
+            <div class="coin-wrap"><img class="coin" src="assets/img/coin-gold.png" alt="Gold coin" /></div>
+            <h3>Gold</h3>
+            <p class="price">Rs. 1,500</p>
+            <ul>
+              <li>Rows A–D, front of the floor</li>
+              <li>Closest to the stage &amp; choir</li>
+              <li>Gold coin ticket</li>
+            </ul>
+            <p class="avail"><span data-left="gold">–</span> seats left</p>
+            <button class="btn btn-outline" data-pick-tier="gold">Choose Gold seats</button>
+          </article>
+          <article class="tier-card reveal" data-delay="1" data-tier="silver">
+            <div class="coin-wrap"><img class="coin" src="assets/img/coin-silver.png" alt="Silver coin" /></div>
+            <h3>Silver</h3>
+            <p class="price">Rs. 1,000</p>
+            <ul>
+              <li>Rows E–J, centre floor</li>
+              <li>Best balance of view &amp; sound</li>
+              <li>Silver coin ticket</li>
+            </ul>
+            <p class="avail"><span data-left="silver">–</span> seats left</p>
+            <button class="btn btn-outline" data-pick-tier="silver">Choose Silver seats</button>
+          </article>
+          <article class="tier-card reveal" data-delay="2" data-tier="bronze">
+            <div class="coin-wrap"><img class="coin" src="assets/img/coin-bronze.png" alt="Bronze coin" /></div>
+            <h3>Bronze</h3>
+            <p class="price">Rs. 750</p>
+            <ul>
+              <li>Gallery rows K–N, upper level</li>
+              <li>Elevated, full-stage view</li>
+              <li>Bronze coin ticket</li>
+            </ul>
+            <p class="avail"><span data-left="bronze">–</span> seats left</p>
+            <button class="btn btn-outline" data-pick-tier="bronze">Choose Bronze seats</button>
+          </article>
+        </div>
+      </section>
+
+      <!-- Gallery -->
+      <section class="block" id="gallery">
+        <div class="block-head reveal">
+          <p class="eyebrow">The look of the night</p>
+          <h2>A hall dressed in <em>winter</em></h2>
+        </div>
+        <div class="gallery">
+          <figure class="g g-tall reveal"><img src="assets/img/snowflake-hallway.jpg" alt="Hallway with hanging paper snowflakes" loading="lazy" /><figcaption>The snowflake walk-in</figcaption></figure>
+          <figure class="g g-wide reveal" data-delay="1"><img src="assets/img/sleigh-reindeer.jpg" alt="Wooden sleigh and reindeer" loading="lazy" /><figcaption>Santa's sleigh at the foyer</figcaption></figure>
+          <figure class="g reveal" data-delay="2"><img src="assets/img/light-snowmen.jpg" alt="Light-up snowmen" loading="lazy" /><figcaption>The snowman family</figcaption></figure>
+          <figure class="g reveal"><img src="assets/img/snowman-jars.jpg" alt="Snowman jars" loading="lazy" /><figcaption>Little snowman jars</figcaption></figure>
+          <figure class="g g-tall reveal" data-delay="1"><img src="assets/img/red-baubles-hall.jpg" alt="Hall with red baubles and snowflakes" loading="lazy" /><figcaption>Red baubles overhead</figcaption></figure>
+          <figure class="g reveal" data-delay="2"><img src="assets/img/snowflakes-hanging.jpg" alt="Hanging snowflakes" loading="lazy" /><figcaption>Silver snowfall</figcaption></figure>
+          <figure class="g reveal"><img src="assets/img/snowflake-single.jpg" alt="Single snowflake ornament" loading="lazy" /><figcaption>One flake at a time</figcaption></figure>
+        </div>
+      </section>
+
+      <!-- Info -->
+      <section class="block info" id="info">
+        <div class="info-grid">
+          <div class="info-card reveal">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <h4>Friday, 18 December 2026</h4><p>The carols begin at 6:30 PM.</p>
+          </div>
+          <div class="info-card reveal" data-delay="1">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <h4>Namal Hall</h4><p>About 300 seats over the ground floor and the gallery.</p>
+          </div>
+          <div class="info-card reveal" data-delay="2">
+            <svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M9 7v12" stroke-dasharray="2 2"/></svg>
+            <h4>One seat, one ticket</h4><p>Each seat gets its own ticket. Show it at the door so we can tear the stub.</p>
+          </div>
+        </div>
+        <div class="cta-band reveal">
+          <h3><span class="script">Come sing with us</span></h3>
+          <a class="btn btn-gold btn-lg" href="#seats" data-go="seats">Book your seats</a>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================= SEATS ================= -->
+    <section class="view" id="view-seats">
+      <div class="page-head">
+        <div class="steps">
+          <span class="step on">1 · Seats</span><i></i><span class="step">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
+        </div>
+        <h2>Choose your seats <em>in Namal Hall</em></h2>
+        <p class="lead">Tap a seat to pick it. Seats nearer the stage cost more. You can pick up to <b id="maxSeatsLbl">10</b> seats.</p>
+      </div>
+
+      <div class="seat-layout">
+        <div class="map-card">
+          <div class="map-toolbar">
+            <div class="legend" id="legend">
+              <button class="lg" data-filter="gold"><i class="sw gold"></i>Gold <b>Rs.1,500</b></button>
+              <button class="lg" data-filter="silver"><i class="sw silver"></i>Silver <b>Rs.1,000</b></button>
+              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Bronze <b>Rs.750</b></button>
+              <span class="lg static"><i class="sw sel"></i>Your pick</span>
+              <span class="lg static"><i class="sw taken"></i>Taken</span>
+            </div>
+            <div class="zoom">
+              <button class="icon-btn" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <button class="icon-btn" id="zoomReset" aria-label="Reset zoom"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg></button>
+              <button class="icon-btn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+
+          <div class="map-wrap" id="mapWrap">
+            <svg id="hall" viewBox="0 0 1000 860" role="img" aria-label="Namal Hall seating plan"></svg>
+            <div class="tooltip" id="tooltip"></div>
+          </div>
+
+          <div class="best">
+            <span>Quick pick:</span>
+            <select id="bestTier">
+              <option value="gold">Gold</option>
+              <option value="silver" selected>Silver</option>
+              <option value="bronze">Bronze</option>
+            </select>
+            <div class="qty">
+              <button id="qtyMinus" aria-label="Fewer">−</button><output id="qty">2</output><button id="qtyPlus" aria-label="More">+</button>
+            </div>
+            <button class="btn btn-outline btn-sm" id="bestBtn">Find best seats together</button>
+          </div>
+        </div>
+
+        <aside class="summary" id="summary">
+          <div class="sum-head">
+            <h3>Your seats</h3>
+            <div class="hold" id="holdTimer" hidden>
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+              <span>Held for <b id="holdLeft">10:00</b></span>
+            </div>
+          </div>
+          <div class="sum-empty" id="sumEmpty">
+            <img src="assets/img/coin-gold.png" alt="" class="ghost-coin" />
+            <p>No seats picked yet.<br/>Tap a seat on the hall plan to add it.</p>
+          </div>
+          <ul class="chips" id="chips"></ul>
+          <div class="breakdown" id="breakdown"></div>
+          <div class="total-row">
+            <span>Total</span>
+            <strong id="total">Rs. 0</strong>
+          </div>
+          <button class="btn btn-gold btn-block" id="toCheckout" disabled>Continue to checkout
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="link-btn" id="clearSel" hidden>Clear all seats</button>
+        </aside>
+      </div>
+
+      <!-- mobile sticky bar -->
+      <div class="mbar" id="mbar">
+        <div><small id="mbarCount">0 seats</small><strong id="mbarTotal">Rs. 0</strong></div>
+        <button class="btn btn-gold" id="mbarGo" disabled>Checkout</button>
+      </div>
+    </section>
+
+    <!-- ================= CHECKOUT ================= -->
+    <section class="view" id="view-checkout">
+      <div class="page-head">
+        <div class="steps">
+          <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
+        </div>
+        <h2>Checkout</h2>
+        <p class="lead">Your tickets will be issued in this name. We'll send a copy to your email.</p>
+      </div>
+
+      <div class="checkout-layout">
+        <form class="co-form" id="coForm" novalidate>
+          <fieldset>
+            <legend>Your details</legend>
+            <div class="row2">
+              <label class="field"><span>First name</span><input name="first" required autocomplete="given-name" /></label>
+              <label class="field"><span>Last name</span><input name="last" required autocomplete="family-name" /></label>
+            </div>
+            <label class="field"><span>Email</span><input name="email" type="email" required autocomplete="email" /></label>
+            <div class="row2">
+              <label class="field"><span>Phone</span><input name="phone" type="tel" required placeholder="07X XXX XXXX" autocomplete="tel" /></label>
+              <label class="field"><span>Joining as</span>
+                <select name="role">
+                  <option>Parent / Guardian</option><option>Student</option><option>Old student</option><option>Staff</option><option>Guest</option>
+                </select>
+              </label>
+            </div>
+            <label class="field"><span>Student name &amp; class <em>(optional)</em></span><input name="student" placeholder="e.g. Nethmi Perera · Grade 9B" /></label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Payment</legend>
+            <div class="pay-option selected">
+              <div class="radio"></div>
+              <div>
+                <strong>PayHere</strong>
+                <p>Pay by card, eZ Cash, mCash, Genie or bank transfer on PayHere's secure page.</p>
+              </div>
+              <span class="badge">Coming soon</span>
+            </div>
+            <p class="note">Payment is not connected yet. For now, the pay button runs a <b>demo</b> so you can see the whole flow and the tickets.</p>
+          </fieldset>
+
+          <label class="check"><input type="checkbox" name="agree" required /><span>I understand tickets are for the seats shown and cannot be refunded.</span></label>
+          <p class="form-error" id="formError" hidden></p>
+        </form>
+
+        <aside class="summary co-summary">
+          <h3>Order summary</h3>
+          <div class="co-event">
+            <img src="assets/img/red-baubles-hall.jpg" alt="" />
+            <div>
+              <strong class="script">Winter Vespers</strong>
+              <span>Fri 18 Dec 2026 · 6:30 PM</span>
+              <span>Namal Hall</span>
+            </div>
+          </div>
+          <ul class="co-lines" id="coLines"></ul>
+          <div class="total-row"><span>Total</span><strong id="coTotal">Rs. 0</strong></div>
+          <button class="btn btn-gold btn-block" id="payBtn" type="button">
+            <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+            <span id="payLbl">Pay with PayHere</span>
+          </button>
+          <button class="link-btn" data-go="seats" type="button">← Change seats</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= TICKETS ================= -->
+    <section class="view" id="view-tickets">
+      <div class="page-head">
+        <div class="steps">
+          <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Checkout</span><i></i><span class="step on">3 · Tickets</span>
+        </div>
+        <h2 id="ticketsTitle">Your tickets</h2>
+        <p class="lead" id="ticketsLead">Drag a stub to the left, or press <b>Tear</b>, to see how it works at the door.</p>
+      </div>
+      <div class="tickets" id="tickets"></div>
+      <div class="tickets-empty" id="ticketsEmpty" hidden>
+        <img src="assets/img/coin-silver.png" alt="" class="ghost-coin" />
+        <p>No tickets yet.</p>
+        <a class="btn btn-gold" href="#seats" data-go="seats">Pick your seats</a>
+      </div>
+      <div class="tickets-actions" id="ticketsActions" hidden>
+        <button class="btn btn-ghost" id="printBtn">Print tickets</button>
+        <a class="btn btn-gold" href="#seats" data-go="seats">Book more seats</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>
+      <img src="assets/img/sunico-logo.png" alt="SUNICO" />
+      <p><span class="script">Winter Vespers</span> · SUNICO Christmas Carols 2026</p>
+    </div>
+    <p class="small">Namal Hall · Friday 18 December 2026 · 6:30 PM</p>
+    <button class="link-btn small" id="resetDemo">Reset demo bookings</button>
+  </footer>
+
+  <!-- payment processing modal -->
+  <div class="modal" id="payModal" hidden>
+    <div class="modal-card">
+      <div class="loader"><img src="assets/img/coin-gold.png" alt="" /></div>
+      <h3 id="payModalTitle">Contacting PayHere…</h3>
+      <p id="payModalText">Demo mode: no money is taken.</p>
+    </div>
+  </div>
+
+  <!-- lightbox -->
+  <div class="lightbox" id="lightbox" hidden><img alt="" /><button class="icon-btn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/snow.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
