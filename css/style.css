@@ -1017,3 +1017,99 @@ button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,11
 .floor-tabs button[data-floor=gallery]:not(.on) small{color:var(--gold-2)}
 @media (max-width:700px){.floor-tabs button small{display:inline;font-size:.68rem}.floor-tabs button{flex-direction:column;gap:.1rem}.floor-tabs button svg{display:none}}
 #hall .row-lbl.aisle{fill:var(--gold-2);font-size:19px;font-weight:800}
+
+/* =========================================================
+   SEATS PAGE v3: whole hall fixed on computers + side panel
+   (floor switch, colours, quick pick, your seats) always in view
+   ========================================================= */
+#view-seats .page-head{padding-bottom:1.2rem}
+#view-seats .page-head h2{font-size:clamp(1.8rem,3.2vw,2.6rem);margin:.3rem 0 .3rem}
+.seat-layout{max-width:1840px;grid-template-columns:minmax(0,1fr) 300px;gap:1.1rem}
+.map-card{padding:.8rem}
+.map-hint{display:none}
+.map-wrap{height:auto;aspect-ratio:var(--hall-ar);max-height:calc(100vh - 110px);margin:0 auto;border-radius:16px}
+.map-wrap.pannable{cursor:grab}
+.map-wrap:not(.zoomed) .seat{cursor:pointer}
+.floor-jump{display:none}
+.seat:hover .seat-in,.seat:focus-visible .seat-in{transform:scale(1.18)}
+
+.seat-side{position:sticky;top:84px;max-height:calc(100vh - 96px);overflow:auto;display:flex;flex-direction:column;gap:.7rem;scrollbar-width:thin}
+.side-box{padding:.9rem 1rem;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--line)}
+.side-box h4{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:.6rem;display:flex;justify-content:space-between;align-items:baseline}
+.side-box h4 small{letter-spacing:0;text-transform:none;font-weight:500;color:var(--dim);font-size:.72rem}
+.seat-side .floor-tabs{flex-direction:column;padding:0;gap:.45rem}
+.seat-side .floor-tabs button{justify-content:flex-start;text-align:left;flex-wrap:wrap;padding:.7rem .85rem;font-size:.95rem;row-gap:0}
+.seat-side .floor-tabs button small{flex-basis:100%;padding-left:calc(18px + .5rem)}
+.seat-side .legend{display:grid;grid-template-columns:1fr;gap:.35rem}
+.seat-side .lg{border-radius:12px;padding:.5rem .7rem;font-size:.88rem;justify-content:flex-start}
+.seat-side .lg b{margin-left:auto;color:var(--text)}
+.seat-side .lg .sw{width:20px;height:20px;border-radius:6px}
+.seat-side .lg.static{border-color:var(--line);border-style:dashed}
+.seat-side .best{display:grid;grid-template-columns:1fr auto;gap:.5rem;padding:0;border:0}
+.seat-side .best .btn-outline{grid-column:1/-1;width:100%}
+.seat-side .summary{position:static;top:auto;padding:1rem 1.1rem;border-radius:18px}
+.seat-side .summary .sum-empty{padding:.6rem 0}
+.seat-side .summary .ghost-coin{width:64px}
+.seat-side .chips{max-height:150px;overflow:auto}
+
+/* phones & tablets: controls above the map, map is a drag/zoom window */
+@media (max-width:1024px){
+  .seat-layout{display:flex;flex-direction:column;gap:.7rem}
+  .seat-side{display:contents}
+  .floor-box{order:1}.legend-box{order:2}.map-card{order:3}.best-box{order:4}
+  .seat-side .summary{display:none}
+  .map-card{padding:.5rem}
+  .map-hint{display:block;padding:.1rem .5rem .5rem}
+  .map-wrap,.map-wrap.zoomed{aspect-ratio:auto;max-height:none;height:min(64svh,620px);margin:0}
+  .floor-jump{display:flex}
+  .seat-side .floor-tabs{flex-direction:row}
+  .seat-side .floor-tabs button{justify-content:center;text-align:center;flex-direction:column;gap:0}
+  .seat-side .floor-tabs button small{padding:0;flex-basis:auto}
+  .seat-side .floor-tabs button svg{display:none}
+  .side-box{padding:.7rem .75rem}
+  .legend-box h4 small{display:none}
+  .seat-side .legend{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0;width:auto;padding:0 0 .1rem}
+  .seat-side .lg{flex:none;padding:.45rem .7rem;font-size:.82rem}
+  .seat-side .lg b{margin-left:.3rem}
+  .seat-side .best{grid-template-columns:1fr auto}
+}
+/* compact side panel; "Your seats" + checkout pinned to the bottom so they're always visible */
+@media (min-width:1025px){
+  .seat-side{gap:.55rem}
+  .side-box{padding:.75rem .85rem}
+  .side-box h4{margin-bottom:.5rem}
+  .seat-side .floor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+  .seat-side .floor-tabs button{flex-direction:column;align-items:flex-start;padding:.55rem .65rem;font-size:.9rem;gap:.15rem}
+  .seat-side .floor-tabs button small{padding:0;font-size:.68rem;line-height:1.25}
+  .seat-side .legend{grid-template-columns:1fr 1fr;gap:.35rem}
+  .seat-side .lg{padding:.42rem .55rem;font-size:.82rem;gap:.5rem}
+  .seat-side .lg[data-filter=all]{grid-column:1/-1;justify-content:center}
+  .seat-side .lg.tier span{display:flex;flex-direction:column;line-height:1.15}
+  .seat-side .lg.tier b{margin:0;font-size:.74rem;color:var(--muted)}
+  .seat-side .lg .sw{width:18px;height:18px;flex:none}
+  .seat-side .summary{position:sticky;bottom:0;z-index:2;background:linear-gradient(180deg,rgba(22,30,64,.97),rgba(14,20,44,.98));box-shadow:0 -12px 30px rgba(5,8,20,.6)}
+  .seat-side .summary h3{font-size:1.25rem}
+  .seat-side .summary .ghost-coin{display:none}
+  .seat-side .summary .sum-empty{padding:.2rem 0 .4rem;font-size:.85rem}
+  .seat-side .summary .total-row{margin:.5rem 0 .7rem}
+  /* zoom buttons in the empty bottom-right corner, off the seats */
+  .map-wrap .zoom{top:auto;bottom:.8rem;right:.8rem;flex-direction:row}
+}
+@media (min-width:1025px){
+  .seat-side .floor-tabs button{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap}
+  .seat-side .floor-tabs button small{flex-basis:auto;display:block}
+  .seat-side .floor-tabs button svg{display:none}
+  .seat-side .lg.tier{justify-content:flex-start;text-align:left}
+  .seat-side .summary{padding:.8rem 1rem}
+  .seat-side .summary .sum-head{margin-bottom:.3rem}
+  .seat-side .summary .sum-empty{padding:0 0 .2rem;text-align:left;color:var(--muted)}
+  .seat-side .summary .sum-empty br{display:none}
+  .seat-side .summary .total-row{margin:.35rem 0 .55rem;padding-top:.45rem}
+  .seat-side .summary .total-row strong{font-size:1.6rem}
+  .seat-side .summary .btn{padding-top:.75rem;padding-bottom:.75rem}
+  .seat-side .summary .link-btn{margin-top:.4rem}
+}
+@media (max-width:1024px){
+  .seat-layout>.map-card,.seat-side>.side-box{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+  .seat-side .legend{max-width:100%}
+}

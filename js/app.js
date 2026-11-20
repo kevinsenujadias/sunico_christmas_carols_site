@@ -169,6 +169,8 @@
   /** readable start: zoomed so seats are big, at the front rows, centred on the middle aisle */
   function openView(instant) {
     if (!mapWrap.clientWidth) return;
+    $$('#legend [data-filter]').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    if (!fitMode()) { view.z = 1; view.cx = BASE.w / 2; view.cy = BASE.h / 2; return instant ? applyView() : animateView(); }
     view.z = tapZoom();
     view.cx = floor === 'gallery' ? 0 : BASE.w / 2;   // gallery: start at the first full block (clamped to the left edge)
     const stg = PLAN.FLOORS[floor].stage;
@@ -217,7 +219,8 @@
   const BASE = { w: PLAN.FLOORS.ground.w, h: PLAN.FLOORS.ground.h };   // changes with the floor
   const view = { z: 1, cx: BASE.w / 2, cy: BASE.h / 2 };
   // On phones the map sits in a tall frame, so the visible area follows the frame's shape.
-  const fitMode = () => true;   // the map is a fixed window on every screen; we zoom/pan inside it
+  // phones/tablets: the map is a window we zoom/drag inside. Computers: the whole floor, fixed (zoom only with +).
+  const fitMode = () => matchMedia('(max-width: 1024px)').matches;
   function viewAR() {
     if (!fitMode()) return BASE.h / BASE.w;
     const r = mapWrap.getBoundingClientRect();
@@ -276,7 +279,7 @@
   const mini = document.getElementById('minimap');
   const MINI_COL = { vip: '#a970ff', gold: '#e7bd5a', silver: '#cdd6e2', bronze: '#c47f4e' };
   function drawMini() {
-    if (!mini || !fitMode() || !mapWrap.classList.contains('zoomed')) return;
+    if (!mini || !mapWrap.classList.contains('zoomed')) return;
     const dpr = Math.min(2, devicePixelRatio || 1), cw = mini.clientWidth, ch = mini.clientHeight;
     if (!cw) return;
     if (mini.width !== cw * dpr) { mini.width = cw * dpr; mini.height = ch * dpr; }
@@ -366,12 +369,6 @@
 
     hall.addEventListener('click', e => {
       if (moved) { moved = false; return; }
-      if (smallScreen()) {                          // seats too small: first tap zooms into that part of the hall
-        const p = toHall(e.clientX, e.clientY);
-        zoomTo(tapZoom(), p.x, p.y);
-        hideTip();
-        return;
-      }
       const g = e.target.closest('.seat');
       if (!g) return;
       const s = seats.get(g.dataset.id);
@@ -402,7 +399,8 @@
       setFilter(f === 'all' || b.classList.contains('active') ? null : f);
     }));
     $('#floorJump').addEventListener('click', () => { setFilter(null, { stay: true }); setFloor(floor === 'ground' ? 'gallery' : 'ground'); });
-    addEventListener('resize', () => { clearTimeout(bindMap._r); bindMap._r = setTimeout(applyView, 120); });
+    let wasFit = fitMode();
+    addEventListener('resize', () => { clearTimeout(bindMap._r); bindMap._r = setTimeout(() => { if (fitMode() !== wasFit) { wasFit = fitMode(); openView(true); } else applyView(); }, 120); });
   }
 
   function setFilter(tier, { stay = false } = {}) {
@@ -417,10 +415,12 @@
       const list = [...seats.values()].filter(s => s.tier === tier && s.floor === floor);
       const xs = list.map(s => s.x), ys = list.map(s => s.y);
       const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-      view.z = tapZoom();                                  // big seats, starting at the tier's front row
-      zoomTo(view.z, cx, Math.min(...ys) - 50 + viewSize().h / 2);
+      if (fitMode()) {                                     // phones: big seats, starting at the tier's front row
+        view.z = tapZoom();
+        zoomTo(view.z, cx, Math.min(...ys) - 50 + viewSize().h / 2);
+      }
       $('#bestTier').value = tier;
-    } else zoomTo(1, BASE.w / 2, BASE.h / 2);
+    } else if (fitMode()) openView();
   }
 
   /* best available seats together: front rows first, then closest to the middle of the hall */
@@ -1271,7 +1271,7 @@
       if (!run) { toast(`No ${qty} ${TIERS[tier].label} seats left side by side. Try fewer seats or another tier.`); return; }
       if (run[0].floor !== floor) setFloor(run[0].floor, { instant: true });
       run.forEach((s, i) => setTimeout(() => toggleSeat(s.id), i * 90));
-      zoomTo(Math.max(view.z, fitMode() ? tapZoom() : 2), run.reduce((a, s) => a + s.x, 0) / run.length, run[0].y);
+      if (fitMode() || view.z > 1) zoomTo(Math.max(view.z, fitMode() ? tapZoom() : 1), run.reduce((a, s) => a + s.x, 0) / run.length, run[0].y);
       toast(`Picked ${run.map(s => s.id).join(', ')} — ${TIERS[tier].label}${run[0].floor === 'gallery' ? ' (Gallery)' : ''}, side by side.`);
     };
 

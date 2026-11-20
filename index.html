@@ -231,23 +231,7 @@
 
       <div class="seat-layout">
         <div class="map-card">
-          <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
-            <button class="on" data-floor="ground" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/></svg>Ground floor <small>VIP · Gold · Silver · Bronze</small></button>
-            <button data-floor="gallery" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M4 14h16M6 14V9h12v5M9 9V5h6v4"/></svg>Gallery ⬆ <small>upstairs · 300 Gold seats</small></button>
-          </div>
-          <div class="map-toolbar">
-            <div class="legend" id="legend">
-              <button class="lg active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>Whole hall</button>
-              <button class="lg" data-filter="vip"><i class="sw vip"></i>VIP <b>Rs.5,000</b></button>
-              <button class="lg" data-filter="gold"><i class="sw gold"></i>Gold <b>Rs.3,500</b></button>
-              <button class="lg" data-filter="silver"><i class="sw silver"></i>Silver <b>Rs.2,500</b></button>
-              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Bronze <b>Rs.1,500</b></button>
-              <span class="lg static"><i class="sw sel"></i>Your pick</span>
-              <span class="lg static"><i class="sw taken"></i>Booked</span>
-            </div>
-          </div>
-
-          <p class="map-hint"><span class="h-out">Tap any part of the hall to zoom in</span><span class="h-zoomed">Tap a seat to pick it · drag the map or use the mini map to see more seats</span></p>
+          <p class="map-hint">Drag to move around · tap a seat to pick it</p>
           <div class="map-wrap" id="mapWrap">
             <div class="zoom" aria-label="Zoom">
               <button class="icon-btn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
@@ -260,9 +244,32 @@
             <div class="tooltip" id="tooltip"></div>
           </div>
 
+        </div>
+
+        <aside class="seat-side">
+          <section class="side-box floor-box">
+            <h4>Floor</h4>
+          <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
+            <button class="on" data-floor="ground" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/></svg>Ground floor <small>VIP · Gold · Silver · Bronze</small></button>
+            <button data-floor="gallery" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M4 14h16M6 14V9h12v5M9 9V5h6v4"/></svg>Gallery ⬆ <small>upstairs · 300 Gold seats</small></button>
+          </div>
+          </section>
+          <section class="side-box legend-box">
+            <h4>Seat colours <small>tap to highlight</small></h4>
+            <div class="legend" id="legend">
+              <button class="lg active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>All seats</button>
+              <button class="lg tier" data-filter="vip"><i class="sw vip"></i><span>VIP<b>Rs.5,000</b></span></button>
+              <button class="lg tier" data-filter="gold"><i class="sw gold"></i><span>Gold<b>Rs.3,500</b></span></button>
+              <button class="lg tier" data-filter="silver"><i class="sw silver"></i><span>Silver<b>Rs.2,500</b></span></button>
+              <button class="lg tier" data-filter="bronze"><i class="sw bronze"></i><span>Bronze<b>Rs.1,500</b></span></button>
+              <span class="lg static"><i class="sw sel"></i>Your pick</span>
+              <span class="lg static"><i class="sw taken"></i>Booked</span>
+            </div>
+          </section>
+          <section class="side-box best-box">
+            <h4>Quick pick</h4>
           <div class="best">
-            <span>Quick pick:</span>
-            <select id="bestTier">
+                        <select id="bestTier">
               <option value="vip">VIP</option>
               <option value="gold" selected>Gold</option>
               <option value="silver">Silver</option>
@@ -273,9 +280,8 @@
             </div>
             <button class="btn btn-outline btn-sm" id="bestBtn">Find best seats together</button>
           </div>
-        </div>
-
-        <aside class="summary" id="summary">
+          </section>
+        <div class="summary" id="summary">
           <div class="sum-head">
             <h3>Your seats</h3>
             <div class="hold" id="holdTimer" hidden>
@@ -285,7 +291,7 @@
           </div>
           <div class="sum-empty" id="sumEmpty">
             <img src="assets/img/coin-gold.png" alt="" class="ghost-coin" />
-            <p>No seats picked yet.<br/>Tap a seat on the hall plan to add it.</p>
+            <p>No seats picked yet. <br/>Tap a seat on the hall plan to add it.</p>
           </div>
           <ul class="chips" id="chips"></ul>
           <div class="breakdown" id="breakdown"></div>
@@ -296,6 +302,7 @@
           <button class="btn btn-gold btn-block" id="toCheckout" disabled>Continue to checkout
             <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
           <button class="link-btn" id="clearSel" hidden>Clear all seats</button>
+        </div>
         </aside>
       </div>
 
