@@ -77,7 +77,6 @@
       label: 'Ground floor', w: 1890, h: 1080,
       stage: { x: 595, y: 24, w: 700, h: 104, label: 'STAGE' },
       boxes: [
-        { x: 1640, y: 34, w: 200, h: 72, label: 'SEATED DOOR', kind: 'door' },
         { x: 835, y: 782, w: 220, h: 260, label: 'LIFT', kind: 'lift' },
       ],
       notes: [

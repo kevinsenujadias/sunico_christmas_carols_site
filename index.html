@@ -250,21 +250,9 @@
           <section class="side-box floor-box">
             <h4>Floor</h4>
           <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
-            <button class="on" data-floor="ground" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/></svg>Ground floor <small>VIP · Gold · Silver · Bronze</small></button>
-            <button data-floor="gallery" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M4 14h16M6 14V9h12v5M9 9V5h6v4"/></svg>Gallery ⬆ <small>upstairs · 300 Gold seats</small></button>
+            <button class="on fl-ground" data-floor="ground" role="tab"><span class="fl-name">Ground floor</span><small>VIP · Gold · Silver · Bronze</small></button>
+            <button class="fl-gallery" data-floor="gallery" role="tab"><span class="fl-name">Gallery ⬆</span><small>Upstairs · 300 Gold seats</small></button>
           </div>
-          </section>
-          <section class="side-box legend-box">
-            <h4>Seat colours <small>tap to highlight</small></h4>
-            <div class="legend" id="legend">
-              <button class="lg active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>All seats</button>
-              <button class="lg tier" data-filter="vip"><i class="sw vip"></i><span>VIP<b>Rs.5,000</b></span></button>
-              <button class="lg tier" data-filter="gold"><i class="sw gold"></i><span>Gold<b>Rs.3,500</b></span></button>
-              <button class="lg tier" data-filter="silver"><i class="sw silver"></i><span>Silver<b>Rs.2,500</b></span></button>
-              <button class="lg tier" data-filter="bronze"><i class="sw bronze"></i><span>Bronze<b>Rs.1,500</b></span></button>
-              <span class="lg static"><i class="sw sel"></i>Your pick</span>
-              <span class="lg static"><i class="sw taken"></i>Booked</span>
-            </div>
           </section>
           <section class="side-box best-box">
             <h4>Quick pick</h4>
@@ -280,6 +268,18 @@
             </div>
             <button class="btn btn-outline btn-sm" id="bestBtn">Find best seats together</button>
           </div>
+          </section>
+          <section class="side-box legend-box">
+            <h4>Seat colours <small>tap one to highlight</small></h4>
+            <div class="legend" id="legend">
+              <button class="lg lg-all active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>All seats</button>
+              <button class="lg tier" data-filter="vip"><i class="sw vip"></i><span>VIP<b>Rs.5,000</b></span></button>
+              <button class="lg tier" data-filter="gold"><i class="sw gold"></i><span>Gold<b>Rs.3,500</b></span></button>
+              <button class="lg tier" data-filter="silver"><i class="sw silver"></i><span>Silver<b>Rs.2,500</b></span></button>
+              <button class="lg tier" data-filter="bronze"><i class="sw bronze"></i><span>Bronze<b>Rs.1,500</b></span></button>
+              <span class="lg static"><i class="sw sel"></i>Your pick</span>
+              <span class="lg static"><i class="sw taken"></i>Booked</span>
+            </div>
           </section>
         <div class="summary" id="summary">
           <div class="sum-head">
