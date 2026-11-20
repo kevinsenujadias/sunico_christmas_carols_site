@@ -1147,3 +1147,37 @@ button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,11
 .seat-side .floor-tabs button.on::before{content:none}
 .seat-side .floor-tabs button.on .fl-name::before{content:"✓ ";color:#f6dc93}
 .seat-side .floor-tabs button:not(.on){opacity:.92;filter:none}
+
+/* ===== controls inside the map (computers) ===== */
+.map-ov{display:none}
+@media (min-width:1025px){
+  .ctl-in-map .floor-box,.ctl-in-map .legend-box{display:none}
+  .ctl-in-map .map-ov{display:flex;position:absolute;z-index:4}
+  .map-wrap.zoomed .ov-left{display:none}
+  .seat-layout{grid-template-columns:minmax(0,1fr) 290px}
+  /* floor buttons, right of the stage */
+  .ov-right .floor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;width:100%;height:100%;padding:0}
+  .ov-right .floor-tabs button{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.15rem;
+    padding:.4rem .75rem;border-radius:14px;border:1.5px solid rgba(246,220,147,.5);text-align:left;color:#f6dc93;opacity:.92;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 22px -8px rgba(0,0,0,.7);transition:transform .2s,box-shadow .25s,opacity .2s}
+  .ov-right .floor-tabs .fl-ground{background:linear-gradient(160deg,#a3122b 0%,#6b0a1c 55%,#3d0610 100%)}
+  .ov-right .floor-tabs .fl-gallery{background:linear-gradient(160deg,#2849a8 0%,#18306f 55%,#0c1a42 100%)}
+  .ov-right .floor-tabs .fl-name{font-family:var(--f-serif);font-weight:700;font-size:clamp(13px,1.05vw,20px);line-height:1.1;color:#f6dc93;text-shadow:0 1px 2px rgba(0,0,0,.5);white-space:nowrap}
+  .ov-right .floor-tabs small{display:block;font-size:clamp(9px,.62vw,12px);font-weight:600;color:rgba(246,220,147,.85);line-height:1.25}
+  .ov-right .floor-tabs svg{display:none}
+  .ov-right .floor-tabs button:hover{opacity:1;transform:translateY(-1px)}
+  .ov-right .floor-tabs button.on{opacity:1;border:2px solid #f6dc93;box-shadow:0 0 0 3px rgba(246,220,147,.2),0 0 26px -4px rgba(246,220,147,.6),inset 0 1px 0 rgba(255,255,255,.25)}
+  .ov-right .floor-tabs button.on .fl-name::before{content:"✓ "}
+  /* seat colours, left of the stage */
+  .ov-left .legend{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:.4rem;width:100%;height:100%;margin:0;padding:0;overflow:visible}
+  .ov-left .lg{display:flex;align-items:center;gap:.5rem;min-width:0;padding:.2rem .55rem;border-radius:12px;font-size:clamp(10px,.72vw,14px);
+    color:var(--text);background:rgba(16,24,58,.75);border:1px solid var(--line-2);backdrop-filter:blur(4px)}
+  .ov-left .lg-all{display:none}
+  .ov-left .lg .sw{width:clamp(14px,1.05vw,20px);height:clamp(14px,1.05vw,20px);border-radius:5px;flex:none}
+  .ov-left .lg.tier span{display:flex;flex-direction:column;line-height:1.1;font-weight:600}
+  .ov-left .lg.tier b{margin:0;font-size:.85em;color:var(--muted);font-weight:600}
+  .ov-left .lg.static{border-style:dashed;background:rgba(16,24,58,.45)}
+  .ov-left .lg.active:not(.lg-all){border-color:var(--gold);background:rgba(231,189,90,.16)}
+  .ov-left .lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,112,255,.2)}
+}
+@media (min-width:1025px){.ov-left .lg{justify-content:flex-start;text-align:left}}

@@ -153,6 +153,7 @@
     mapWrap.style.setProperty('--hall-ar', `${BASE.w} / ${BASE.h}`);
     if (mini) mini.style.aspectRatio = `${BASE.w} / ${BASE.h}`;
     $$('#floorTabs [data-floor]').forEach(b => b.classList.toggle('on', b.dataset.floor === f));
+    placeControls();
     const fj = $('#floorJump');
     if (fj) {
       fj.classList.toggle('down', f === 'gallery');
@@ -163,6 +164,20 @@
     if (keepView) return;
     hall.setAttribute('viewBox', `0 0 ${BASE.w} ${BASE.h}`);
     openView(instant);
+  }
+  /* computers: Floor buttons + seat colours sit inside the map, in the empty corners beside the stage */
+  function placeControls() {
+    const inMap = !fitMode();
+    document.body.classList.toggle('ctl-in-map', inMap);
+    const legend = $('#legend'), tabs = $('#floorTabs');
+    if (inMap) { $('#ovLegend').appendChild(legend); $('#ovFloor').appendChild(tabs); }
+    else { $('.legend-box').appendChild(legend); $('.floor-box').appendChild(tabs); }
+    const F = PLAN.FLOORS[floor], st = F.stage, pad = 26, top = 16;
+    const h = F.notes[0].y - 34 - top;
+    const pct = (v, of) => (v / of * 100) + '%';
+    const set = (el, x, w) => Object.assign(el.style, { left: pct(x, F.w), width: pct(w, F.w), top: pct(top, F.h), height: pct(h, F.h) });
+    set($('#ovLegend'), pad, st.x - 2 * pad);
+    set($('#ovFloor'), st.x + st.w + pad, F.w - (st.x + st.w) - 2 * pad);
   }
   const galleryLeft = () => [...seats.values()].filter(s => s.floor === 'gallery' && !s.taken).length;
 
@@ -400,7 +415,7 @@
     }));
     $('#floorJump').addEventListener('click', () => { setFilter(null, { stay: true }); setFloor(floor === 'ground' ? 'gallery' : 'ground'); });
     let wasFit = fitMode();
-    addEventListener('resize', () => { clearTimeout(bindMap._r); bindMap._r = setTimeout(() => { if (fitMode() !== wasFit) { wasFit = fitMode(); openView(true); } else applyView(); }, 120); });
+    addEventListener('resize', () => { clearTimeout(bindMap._r); bindMap._r = setTimeout(() => { if (fitMode() !== wasFit) { wasFit = fitMode(); placeControls(); openView(true); } else applyView(); }, 120); });
   }
 
   function setFilter(tier, { stay = false } = {}) {
@@ -492,6 +507,18 @@
       shownTotal = total;
     }
     drawMini();
+    followSide();
+  }
+
+  /* computers: the side panel follows your picks: scroll down to "Your seats" when you pick,
+     back to the top (Floor, Quick pick) when everything is cleared */
+  let lastPickCount = 0;
+  function followSide() {
+    const n = picked.size, side = $('.seat-side');
+    if (n === lastPickCount || !side || fitMode()) { lastPickCount = n; return; }
+    const target = n === 0 ? 0 : side.scrollHeight;
+    lastPickCount = n;
+    requestAnimationFrame(() => side.scrollTo({ top: target, behavior: 'smooth' }));
   }
 
   /* seats-left counters on tier cards */
