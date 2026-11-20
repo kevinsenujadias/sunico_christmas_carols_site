@@ -56,6 +56,8 @@
   const picked = new Map();                // id -> seat
   let bookings = [];                       // all booking records (from DB)
   let myRefs = store.get('wv_my_refs', []); // bookings made / found on this device
+  let liveTaken = [];                       // seats sold/held on the server (live mode)
+  let staffBookings = [];                   // staff page list
   let holdEnd = null, holdTimer = null;
   let justPaidRef = null;
 
@@ -132,7 +134,7 @@
 
     // Seats
     const rand = seeded(20261218);
-    const booked = new Set(bookings.flatMap(b => b.tickets.map(t => t.seat)));
+    const booked = new Set(Backend.live ? liveTaken : bookings.flatMap(b => b.tickets.map(t => t.seat)));
     const gSeats = svgEl('g', { id: 'seatGroup' }, hall);
     let floorIdx = 0, galIdx = 0;
     const tierSpans = {};
@@ -153,7 +155,7 @@
         const x = CX + R * Math.sin(theta), y = CY + R * Math.cos(theta);
         const num = i + 1;
         const id = rowDef.row + num;
-        const taken = booked.has(id) || rand() < DEMO_TAKEN_RATIO;
+        const taken = booked.has(id) || (!Backend.live && rand() < DEMO_TAKEN_RATIO);
         const seat = { id, row: rowDef.row, num, tier: rowDef.tier, block: pt.block, u: pt.u, mid, taken, x, y, el: null };
         const g = svgEl('g', {
           class: `seat ${seat.tier}${taken ? ' taken' : ''}`,
@@ -495,7 +497,6 @@
       el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
       shownTotal = total;
     }
-    picked.size ? startHold() : stopHold();
     drawMini();
   }
 
@@ -539,39 +540,58 @@
     ids.forEach(id => { const s = seats.get(id); if (!s) return; s.taken = true; s.el.classList.add('taken'); s.el.classList.remove('picked'); picked.delete(id); });
   }
 
+  // seats freed or sold elsewhere since the page loaded (live mode)
+  function syncTaken(serverTaken) {
+    const set = new Set(serverTaken);
+    let lost = [];
+    seats.forEach(s => {
+      const now = set.has(s.id);
+      if (now && !s.taken) {
+        s.taken = true; s.el.classList.add('taken');
+        if (picked.has(s.id)) { picked.delete(s.id); s.el.classList.remove('picked'); lost.push(s.id); }
+      } else if (!now && s.taken) { s.taken = false; s.el.classList.remove('taken'); }
+    });
+    if (lost.length) toast(`Sorry, ${lost.join(', ')} ${lost.length > 1 ? 'were' : 'was'} just booked by someone else.`);
+    updateSummary(); updateAvailability();
+  }
+
+  function finishBooking(booking) {
+    bookings = [booking, ...bookings.filter(b => b.ref !== booking.ref)];
+    myRefs = [booking.ref, ...myRefs.filter(r => r !== booking.ref)]; store.set('wv_my_refs', myRefs);
+    markTaken(booking.tickets.map(t => t.seat));
+    updateSummary(); updateAvailability();
+    $('#coForm').reset();
+    justPaidRef = booking.ref;
+    $('#payModal').hidden = true;
+    go('tickets');
+    window.Snow && Snow.on && Snow.burst();
+  }
+
   async function pay() {
     if (!picked.size) { go('seats'); return; }
     if (!validate()) return;
     const f = $('#coForm').elements;
+    const customer = { first: f.first.value.trim(), last: f.last.value.trim(), email: f.email.value.trim(), phone: f.phone.value.trim(), role: f.role.value, student: f.student.value.trim() };
+    const sortedSeats = [...picked.values()].sort((a, b) => a.row.localeCompare(b.row) || a.num - b.num);
+    const modal = $('#payModal'), title = $('#payModalTitle'), text = $('#payModalText');
+    const show = (t, x) => { title.textContent = t; text.textContent = x; modal.hidden = false; };
+
+    if (Backend.live) return payLive(customer, sortedSeats, show);
+
+    // ---------- DEMO (no server yet) ----------
     const { total } = totals();
     const ref = DB.newRef();
     const booking = {
-      ref, status: Payment.demo ? 'paid-demo' : 'paid', paymentId: null,
-      amount: total, currency: 'LKR', createdAt: new Date().toISOString(),
-      customer: { first: f.first.value.trim(), last: f.last.value.trim(), email: f.email.value.trim(), phone: f.phone.value.trim(), role: f.role.value, student: f.student.value.trim() },
-      tickets: [...picked.values()].sort((a, b) => a.row.localeCompare(b.row) || a.num - b.num)
-        .map(s => ({ ticketId: `${ref}-${s.id}`, seat: s.id, row: s.row, num: s.num, tier: s.tier, price: TIERS[s.tier].price, checkedInAt: null }))
+      ref, status: 'paid-demo', paymentId: null, amount: total, currency: 'LKR', createdAt: new Date().toISOString(), customer,
+      tickets: sortedSeats.map(s => ({ ticketId: `${ref}-${s.id}`, seat: s.id, row: s.row, num: s.num, tier: s.tier, price: TIERS[s.tier].price, checkedInAt: null }))
     };
-    const modal = $('#payModal');
-    $('#payModalTitle').textContent = 'Contacting PayHere…';
-    $('#payModalText').textContent = Payment.demo ? 'Demo mode: no money is taken.' : 'Finish the payment in the PayHere window.';
-    modal.hidden = false;
+    show('Contacting PayHere…', 'Demo mode: no money is taken.');
     try {
-      const res = await Payment.pay(booking);
-      booking.paymentId = res.paymentId || null;
-      $('#payModalTitle').textContent = 'Payment confirmed';
-      $('#payModalText').textContent = `Recording booking ${ref}…`;
+      await Payment.pay(booking);
+      show('Payment confirmed', `Recording booking ${ref}…`);
       await DB.create(booking);
       await new Promise(r => setTimeout(r, 700));
-      bookings.unshift(booking);
-      myRefs = [ref, ...myRefs.filter(r => r !== ref)]; store.set('wv_my_refs', myRefs);
-      markTaken(booking.tickets.map(t => t.seat));
-      stopHold(); updateSummary(); updateAvailability();
-      $('#coForm').reset();
-      justPaidRef = ref;
-      modal.hidden = true;
-      go('tickets');
-      window.Snow && Snow.on && Snow.burst();
+      finishBooking(booking);
     } catch (err) {
       modal.hidden = true;
       bookings = await DB.all();
@@ -581,11 +601,47 @@
     }
   }
 
+  // ---------- LIVE: server reserves + signs, PayHere takes the money, server confirms ----------
+  async function payLive(customer, sortedSeats, show) {
+    const modal = $('#payModal');
+    show('Reserving your seats…', 'One moment.');
+    let order;
+    try {
+      [order] = await Promise.all([Backend.createOrder(customer, sortedSeats.map(s => s.id)), Payment.loadSDK()]);
+    } catch (e) {
+      modal.hidden = true;
+      if (e.data?.error === 'SEAT_TAKEN') { markTaken(e.data.taken || []); updateSummary(); updateAvailability(); toast(e.data.message); go('seats'); }
+      else toast(e.message || 'Could not start the payment. Please try again.');
+      return;
+    }
+    const ref = order.booking.ref;
+    show('Pay in the PayHere window', `Booking ${ref} · ${rs(order.booking.amount)}${Backend.sandbox ? ' · TEST MODE: use a PayHere test card' : ''}`);
+    try {
+      await Payment.popup(order.payment);
+    } catch (e) {
+      modal.hidden = true;
+      await Backend.cancelPending(ref);                 // free the seats straight away
+      toast(e.dismissed ? 'Payment cancelled. Your seats are still selected, so you can try again.' : `Payment did not go through: ${e.message}`);
+      return;
+    }
+    show('Confirming your payment…', "PayHere is confirming with us. Please don't close this page.");
+    const b = await Backend.waitForPaid(ref);
+    if (b && (b.status === 'paid' || b.status === 'paid_conflict')) { finishBooking(b); return; }
+    if (b && b.status === 'pending') {
+      // paid, but PayHere's confirmation is slow: show it as "confirming" on the tickets page
+      finishBooking(b);
+      toast('Payment received. Your tickets will appear here as soon as PayHere confirms (usually under a minute).');
+      return;
+    }
+    modal.hidden = true;
+    toast('The payment was not completed. You have not been charged for this booking.');
+  }
+
   /* =========================================================
      TICKETS
      ========================================================= */
   function qrSVG(text) {
-    const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+    const qr = qrcode(0, text.length > 40 ? 'L' : 'M'); qr.addData(text); qr.make();
     const n = qr.getModuleCount(); let d = '';
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
     return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;
@@ -601,52 +657,38 @@
 
   function ticketHTML(b, t) {
     const tier = TIERS[t.tier];
-    const trees = `<svg class="t-trees" viewBox="0 0 400 46" preserveAspectRatio="none"><path d="${TREES}"/></svg>`;
+    const qrText = t.verifyUrl                              // live: signed link to the official check page
+      || (location.protocol.startsWith('http') ? `${location.origin}${location.pathname.replace(/[^/]*$/, '')}verify.html?t=${encodeURIComponent(t.ticketId)}&demo=1` : t.ticketId);
     return `
-    <article class="ticket ${t.tier}${t.checkedInAt ? ' used' : ''}" data-no="${t.ticketId}">
-      <div class="t-part t-stub">
-        <div class="t-flakes"></div><div class="t-snowband"></div>${trees}
-        <div><div class="script">Winter Vespers</div><div class="t-yr">2026</div></div>
-        <div class="t-seat-big"><small>Row · Seat</small><b>${t.seat}</b><div class="t-name">${esc(fullName(b))}</div><div class="t-no">${t.ticketId}</div></div>
+    <article class="ticket tk ${t.tier}${t.checkedInAt ? ' used' : ''}" data-no="${t.ticketId}">
+      <div class="t-part t-stub tk-stub">
+        <div class="tk-tier"><img src="${tier.coin}" alt="" />${tier.label} · ${rs(tier.price)}</div>
+        <div class="tk-mid">
+          <div class="tk-seat"><small>Row · Seat</small><b>${t.seat}</b><span>Row ${t.row} · Seat ${t.num}</span></div>
+          <div class="tk-qr" title="Scan to verify">${qrSVG(qrText)}</div>
+        </div>
+        <div class="tk-who"><b>${esc(fullName(b))}</b><span>${t.ticketId}</span></div>
       </div>
-      <div class="t-part t-main">
-        <div class="t-flakes"></div><div class="t-snowband"></div>${trees}
-        <div class="t-top">
-          <div class="t-title">
-            <div><span class="script">Winter Vespers</span><span class="t-yr">2026</span></div>
-            <div class="t-hark">Hark! The Herald Angels are Singing</div>
-            <div class="t-seatbox">
-              <div><small>Row</small><b>${t.row}</b></div>
-              <div><small>Seat</small><b>${t.num}</b></div>
-              <div><small>Tier</small><b>${tier.label}</b></div>
-            </div>
-          </div>
-          <img class="t-logo" src="assets/img/sunico-logo.png" alt="SUNICO" />
-        </div>
-        <div class="t-info">
-          <div class="venue">${EVENT.venue}</div>
-          <div class="date"><small>${EVENT.day}</small><b>${EVENT.dayNum}<sup>th</sup></b><small>${EVENT.month}<br>${EVENT.year}</small></div>
-          <div class="time">${EVENT.time}</div>
-        </div>
-        <div class="t-qr">${qrSVG(t.ticketId)}<small>${t.ticketId}</small></div>
-        <img class="t-coin" src="${tier.coin}" alt="${tier.label} coin ${rs(tier.price)}" />
+      <div class="t-part t-main tk-main">
+        <img class="tk-face" src="assets/img/ticket-face.jpg" alt="Winter Vespers 2026 · Friday 18 December 2026 · from 4:30 PM · Namal Hall" />
+        <div class="tk-admit-one">ADMIT ONE · ${t.seat}</div>
       </div>
       <div class="t-perf"></div>
       <div class="t-scissor"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg></div>
-      <span class="t-hint">← drag to tear</span>
-      <button class="t-tear-btn" type="button"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg>Tear</button>
-      <div class="t-admit">ADMITTED</div>
-      <button class="t-restore" type="button">↺ Put the stub back</button>
+      <div class="t-admit">ADMITTED${t.checkedInAt ? `<small>${new Date(t.checkedInAt).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</small>` : ''}</div>
     </article>`;
   }
 
-  function statusLabel(b) { return b.status === 'paid-demo' ? 'Paid (demo)' : b.status === 'paid' ? 'Paid' : b.status; }
+  const STATUS = { 'paid-demo': 'Paid (demo)', paid: 'Paid', cash: 'Paid at office', pending: 'Confirming payment…', paid_conflict: 'Paid: needs staff check', chargedback: 'Charged back', cancelled: 'Cancelled', failed: 'Failed', expired: 'Expired' };
+  function statusLabel(b) { return STATUS[b.status] || b.status; }
+  const isValid = b => ['paid', 'paid-demo', 'cash'].includes(b.status);
 
   function renderTickets() {
     const box = $('#ticketList');
-    const mine = myRefs.map(r => bookings.find(b => b.ref === r)).filter(Boolean);
-    const count = mine.reduce((a, b) => a + b.tickets.length, 0);
-    $('#ticketsEmpty').hidden = count > 0;
+    const mine = myRefs.map(r => bookings.find(b => b.ref === r)).filter(b => b && !['cancelled', 'failed', 'expired'].includes(b.status));
+    const count = mine.filter(isValid).reduce((a, b) => a + b.tickets.length, 0);
+    const waiting = mine.filter(b => b.status === 'pending').length;
+    $('#ticketsEmpty').hidden = count > 0 || waiting > 0;
     $('#ticketsActions').hidden = count === 0;
     $('#ticketsLead').hidden = count === 0;
     $('#navTicketCount').hidden = count === 0;
@@ -662,7 +704,7 @@
       div.innerHTML = `<div class="confirm">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>
         <div class="confirm-text">
-          <strong>You're booked, ${esc(b.customer.first)}!</strong>
+          <strong>${b.status === 'pending' ? `Payment received, ${esc(b.customer.first)}!` : `You're booked, ${esc(b.customer.first)}!`}</strong>
           <p>${b.tickets.length} seat${b.tickets.length > 1 ? 's' : ''} · ${rs(b.amount)} · ${statusLabel(b)}. Take a screenshot of this booking number. You'll need it, with your phone number, to find your tickets again.</p>
         </div>
         <div class="confirm-ref"><small>Booking number</small><b>${b.ref}</b><button class="btn btn-ghost btn-sm" data-copy="${b.ref}">Copy</button></div>
@@ -677,8 +719,20 @@
           <div class="bk-ref"><small>Booking number</small><b>${b.ref}</b><button class="icon-btn" data-copy="${b.ref}" title="Copy booking number"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
           <div class="bk-meta"><span>${esc(fullName(b))}</span><span>${b.tickets.length} ticket${b.tickets.length > 1 ? 's' : ''}</span><span>${rs(b.amount)}</span><span class="ok">${statusLabel(b)}</span><span>${fmtDate(b.createdAt)}</span></div>
         </header>
-        <div class="bk-tickets">${b.tickets.map(t => ticketHTML(b, t)).join('')}</div>
+        ${isValid(b) ? `<div class="bk-tickets">${b.tickets.map(t => ticketHTML(b, t)).join('')}</div>`
+          : b.status === 'pending' ? `<div class="bk-wait"><span class="spin"></span><div><b>Confirming your payment with PayHere…</b><p>Seats ${b.tickets.map(t => t.seat).join(', ')} are reserved for you. Your tickets will appear here automatically, usually within a minute.</p></div></div>`
+          : `<div class="bk-wait warn"><div><b>${statusLabel(b)}</b><p>Your payment was received, but there's a problem with a seat. The school office will contact you on ${esc(b.customer.phone)}. Quote booking ${b.ref}.</p></div></div>`}
       </section>`).join('');
+    // keep checking slow confirmations, and notice when a ticket is checked in at the door
+    clearTimeout(renderTickets._t);
+    const stateOf = list => JSON.stringify(list.map(b => [b.ref, b.status, b.tickets.map(t => !!t.checkedInAt)]));
+    const unused = mine.some(b => isValid(b) && b.tickets.some(t => !t.checkedInAt));
+    if (Backend.live && (waiting || unused)) renderTickets._t = setTimeout(async function poll() {
+      if (location.hash !== '#tickets' || document.hidden) { renderTickets._t = setTimeout(poll, 15000); return; }
+      const before = stateOf(bookings);
+      bookings = await DB.all().catch(() => bookings);
+      if (stateOf(bookings) !== before) renderTickets(); else renderTickets._t = setTimeout(poll, waiting ? 4000 : 15000);
+    }, waiting ? 4000 : 15000);
     $$('.ticket', box).forEach((tk, i) => { tk.style.animationDelay = (i * 0.1) + 's'; bindTicket(tk); });
   }
 
@@ -704,51 +758,86 @@
   let staffOpen = sessionStorage.getItem('wv_staff') === '1';
   let adminQuery = '';
 
-  async function renderAdmin() {
+  async function renderAdmin(refetch = true) {
+    if (Backend.live) staffOpen = Backend.staffSignedIn;
     $('#adminGate').hidden = staffOpen;
     $('#adminPanel').hidden = !staffOpen;
+    $('#pinNote').hidden = Backend.live;
     if (!staffOpen) { setTimeout(() => $('#pinInput').focus(), 100); return; }
-    bookings = await DB.all();
-
-    const tickets = bookings.flatMap(b => b.tickets);
-    const revenue = bookings.reduce((a, b) => a + b.amount, 0);
+    if (refetch) try {
+      staffBookings = await (DB.staffAll ? DB.staffAll() : DB.all());
+      if (Backend.live) syncTaken(await DB.bookedSeatIds());
+    } catch (e) {
+      if (e.status === 401) { Backend.staffLogout(); staffOpen = false; return renderAdmin(); }
+      toast('Could not load bookings: ' + e.message); return;
+    }
+    const valid = staffBookings.filter(isValid);
+    const tickets = valid.flatMap(b => b.tickets);
+    const online = valid.filter(b => b.status !== 'cash').reduce((a, b) => a + b.amount, 0);
+    const office = valid.filter(b => b.status === 'cash').reduce((a, b) => a + b.amount, 0);
     const inside = tickets.filter(t => t.checkedInAt).length;
+    const issues = staffBookings.filter(b => ['paid_conflict', 'chargedback'].includes(b.status)).length;
     const left = { gold: 0, silver: 0, bronze: 0 };
     seats.forEach(s => { if (!s.taken) left[s.tier]++; });
     $('#stats').innerHTML = `
-      <div><small>Bookings</small><b>${bookings.length}</b></div>
-      <div><small>Tickets sold</small><b>${tickets.length}</b></div>
-      <div><small>Money collected</small><b>${rs(revenue)}</b></div>
+      <div><small>Tickets sold</small><b>${tickets.length}</b>${issues ? `<small class="warn-txt">${issues} need attention</small>` : ''}</div>
+      <div><small>Online (PayHere)</small><b>${rs(online)}</b>${Backend.config ? `<small>limit ${rs(Backend.config.monthlyCap)} / month</small>` : ''}</div>
+      <div><small>At the office</small><b>${rs(office)}</b></div>
       <div><small>Checked in</small><b>${inside} <em>/ ${tickets.length}</em></b></div>
       <div><small>Seats left</small><b class="left"><span class="g">${left.gold}<i>Gold</i></span><span class="s">${left.silver}<i>Silver</i></span><span class="b">${left.bronze}<i>Bronze</i></span></b></div>`;
 
     const q = adminQuery.toLowerCase().replace(/\s+/g, '');
-    const rows = bookings.filter(b => !q || [b.ref, fullName(b), b.customer.phone, b.customer.email, b.customer.student, ...b.tickets.map(t => t.seat)]
+    const rows = staffBookings.filter(b => !q || [b.ref, fullName(b), b.customer.phone, b.customer.email, b.customer.student, b.paymentId, ...b.tickets.map(t => t.seat)]
       .join('|').toLowerCase().replace(/\s+/g, '').includes(q));
-    $('#bkCount').textContent = `${rows.length} of ${bookings.length}`;
+    $('#bkCount').textContent = `${rows.length} of ${staffBookings.length}`;
     $('#bkBody').innerHTML = rows.length ? rows.map(b => {
       const ins = b.tickets.filter(t => t.checkedInAt).length;
       return `<tr class="bk-row" data-ref="${b.ref}">
-        <td class="mono">${b.ref}</td>
-        <td>${esc(fullName(b))}<small>${esc(b.customer.role)}${b.customer.student ? ' · ' + esc(b.customer.student) : ''}</small></td>
-        <td>${esc(b.customer.phone)}<small>${esc(b.customer.email)}</small></td>
+        <td class="mono">${b.ref}${b.paymentId ? `<small>PayHere ${esc(b.paymentId)}</small>` : ''}</td>
+        <td>${esc(fullName(b))}<small>${esc(b.customer.role || '')}${b.customer.student ? ' · ' + esc(b.customer.student) : ''}</small></td>
+        <td>${esc(b.customer.phone || '')}<small>${esc(b.customer.email || '')}</small></td>
         <td>${b.tickets.map(t => `<span class="seat-tag ${t.tier}${t.checkedInAt ? ' in' : ''}">${t.seat}</span>`).join('')}</td>
         <td class="num">${rs(b.amount)}</td>
-        <td><span class="status ok">${statusLabel(b)}</span></td>
+        <td><span class="status ${isValid(b) ? 'ok' : 'warn'}">${statusLabel(b)}</span></td>
         <td class="num">${ins}/${b.tickets.length}</td>
         <td><small>${fmtDate(b.createdAt)}</small></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="8" class="empty">${bookings.length ? 'No bookings match your search.' : 'No bookings yet.'}</td></tr>`;
+    }).join('') : `<tr><td colspan="8" class="empty">${staffBookings.length ? 'No bookings match your search.' : 'No bookings yet.'}</td></tr>`;
+  }
+
+  async function recordCashSale(e) {
+    e.preventDefault();
+    const f = e.target.elements;
+    const ids = [...new Set(f.seats.value.toUpperCase().split(/[\s,]+/).filter(Boolean))];
+    const bad = ids.filter(id => !seats.has(id));
+    if (!ids.length || bad.length) { toast(bad.length ? `No such seat: ${bad.join(', ')}` : 'Enter the seat numbers, e.g. C4, C5'); return; }
+    const [first, ...rest] = (f.name.value.trim() || 'Office sale').split(' ');
+    const customer = { first, last: rest.join(' ') || '-', phone: f.phone.value.trim(), email: (f.email?.value || '').trim(), role: 'Cash sale', student: '' };
+    try {
+      let b;
+      if (Backend.live) b = await DB.cashSale(ids, customer);
+      else {
+        const ref = DB.newRef();
+        b = { ref, status: 'cash', amount: ids.reduce((a, id) => a + TIERS[seats.get(id).tier].price, 0), currency: 'LKR', createdAt: new Date().toISOString(), customer,
+          tickets: ids.map(id => { const s = seats.get(id); return { ticketId: `${ref}-${id}`, seat: id, row: s.row, num: s.num, tier: s.tier, price: TIERS[s.tier].price, checkedInAt: null }; }) };
+        await DB.create(b);
+      }
+      markTaken(ids); updateAvailability();
+      e.target.reset();
+      toast(`Recorded ${ids.join(', ')} as sold at the office (${rs(b.amount)}). Booking <b>${b.ref}</b>${b.emailResult === 'sent' ? ' · tickets emailed ✓' : ''}`);
+      renderAdmin();
+    } catch (err) { toast(err.data?.message || err.message); }
   }
 
   function resultCard(kind, booking, ticket, extra = '') {
     const box = $('#ciResult');
-    const titles = { ok: 'Valid ticket · checked in', already: 'Already checked in', missing: 'Ticket not found', booking: 'Booking found' };
+    const titles = { ok: 'Valid ticket · checked in', already: 'Already checked in', missing: 'Ticket not found', booking: 'Booking found', unpaid: 'Not paid: do not admit' };
     let body = '';
     if (booking) {
       const tks = ticket ? [ticket] : booking.tickets;
       body = `
-        <div class="ci-who"><b>${esc(fullName(booking))}</b><span>${esc(booking.customer.phone)} · ${booking.ref} · ${statusLabel(booking)}</span></div>
+        <div class="ci-who"><b>${esc(fullName(booking))}</b><span>${esc(booking.customer.phone)} · ${booking.ref} · ${statusLabel(booking)}</span>
+          ${Backend.live && booking.customer.email && isValid(booking) ? `<button class="link-btn" data-resend="${booking.ref}">${booking.emailSentAt ? 'Resend' : 'Send'} tickets to ${esc(booking.customer.email)}</button>` : ''}</div>
         <ul class="ci-tickets">${tks.map(t => `
           <li class="${t.tier}">
             <span class="seat-tag ${t.tier}">${t.seat}</span>
@@ -764,7 +853,13 @@
   }
 
   async function doCheckIn(code) {
-    code = String(code || '').toUpperCase().trim();
+    try { await doCheckInInner(code); }
+    catch (e) { toast('Check-in failed: ' + (e.data?.message || e.message) + '. Check the internet connection.'); }
+  }
+  async function doCheckInInner(code) {
+    code = String(code || '').trim();
+    try { const u = new URL(code); if (u.searchParams.get('t')) code = u.searchParams.get('t'); } catch {}   // QR = verify link
+    code = code.toUpperCase();
     if (!code) return;
     if (/^WV-[A-Z0-9]{6}$/.test(code)) {             // a booking number: show all its tickets
       const b = await DB.byRef(code);
@@ -774,6 +869,7 @@
     const r = await DB.checkIn(code);
     if (r.result === 'missing') resultCard('missing', null, null, `<p>No ticket <b>${esc(code)}</b>. Check the number, or search the bookings by name or phone.</p>`);
     else if (r.result === 'already') resultCard('already', r.booking, r.ticket, `<p>This ticket was already used. Ask for ID before letting them in.</p>`);
+    else if (r.result === 'unpaid') resultCard('unpaid', r.booking, null, `<p>This booking is <b>${statusLabel(r.booking)}</b>. Send them to the office.</p>`);
     else { resultCard('ok', r.booking, r.ticket); try { navigator.vibrate && navigator.vibrate(80); } catch {} }
     $('#ciInput').value = '';
     renderAdmin();
@@ -817,7 +913,7 @@
   function exportCSV() {
     const head = ['Booking number', 'Ticket number', 'Seat', 'Tier', 'Price (LKR)', 'First name', 'Last name', 'Phone', 'Email', 'Joining as', 'Student', 'Status', 'Payment ID', 'Booked at', 'Checked in at'];
     const lines = [head];
-    bookings.forEach(b => b.tickets.forEach(t => lines.push([b.ref, t.ticketId, t.seat, TIERS[t.tier].label, t.price, b.customer.first, b.customer.last, b.customer.phone, b.customer.email, b.customer.role, b.customer.student, statusLabel(b), b.paymentId || '', b.createdAt, t.checkedInAt || ''])));
+    staffBookings.forEach(b => b.tickets.forEach(t => lines.push([b.ref, t.ticketId, t.seat, TIERS[t.tier].label, t.price, b.customer.first, b.customer.last, b.customer.phone, b.customer.email, b.customer.role, b.customer.student, statusLabel(b), b.paymentId || '', b.createdAt, t.checkedInAt || ''])));
     const csv = lines.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
@@ -826,16 +922,19 @@
   }
 
   function bindAdmin() {
-    $('#pinForm').addEventListener('submit', e => {
+    $('#pinForm').addEventListener('submit', async e => {
       e.preventDefault();
-      if ($('#pinInput').value === STAFF_PIN) { staffOpen = true; sessionStorage.setItem('wv_staff', '1'); $('#pinInput').value = ''; renderAdmin(); }
+      const pin = $('#pinInput').value;
+      const ok = Backend.live ? await Backend.staffLogin(pin) : pin === STAFF_PIN;
+      if (ok) { staffOpen = true; if (!Backend.live) sessionStorage.setItem('wv_staff', '1'); $('#pinInput').value = ''; renderAdmin(); }
       else { $('#pinInput').classList.add('bad'); toast('Wrong PIN.'); }
     });
+    $('#cashForm').addEventListener('submit', recordCashSale);
     $('#pinInput').addEventListener('input', e => e.target.classList.remove('bad'));
-    $('#lockBtn').onclick = () => { staffOpen = false; sessionStorage.removeItem('wv_staff'); stopScan(); renderAdmin(); };
+    $('#lockBtn').onclick = () => { staffOpen = false; sessionStorage.removeItem('wv_staff'); Backend.staffLogout(); stopScan(); renderAdmin(); };
     $('#ciForm').addEventListener('submit', e => { e.preventDefault(); doCheckIn($('#ciInput').value); });
     $('#scanBtn').onclick = () => (camStream ? stopScan() : startScan());
-    $('#bkSearch').addEventListener('input', e => { adminQuery = e.target.value; renderAdmin(); });
+    $('#bkSearch').addEventListener('input', e => { adminQuery = e.target.value; renderAdmin(false); });
     $('#csvBtn').onclick = exportCSV;
     $('#bkBody').addEventListener('click', async e => {
       const tr = e.target.closest('.bk-row'); if (!tr) return;
@@ -843,46 +942,32 @@
       $('#ciResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     $('#ciResult').addEventListener('click', async e => {
+      const rsd = e.target.closest('[data-resend]');
+      if (rsd) {
+        rsd.disabled = true; rsd.textContent = 'Sending…';
+        try { const r = await DB.resendEmail(rsd.dataset.resend); rsd.textContent = r === 'sent' ? 'Email sent ✓' : r === 'not-configured' ? 'Email not set up yet' : `Not sent (${r})`; }
+        catch (err) { rsd.textContent = 'Failed: ' + err.message; }
+        return;
+      }
       const ci = e.target.closest('[data-checkin]'), un = e.target.closest('[data-undo]');
       if (ci) doCheckIn(ci.dataset.checkin);
       if (un) { const r = await DB.undoCheckIn(un.dataset.undo); if (r) { resultCard('booking', r.booking); renderAdmin(); } }
     });
   }
 
+  // The stub tears off by itself once door staff have checked the ticket in.
+  const TORN_SEEN = 'wv_torn_seen';
   function bindTicket(tk) {
     const stub = $('.t-stub', tk);
-    const tear = (dx = 0, rot = 0) => {
-      if (tk.classList.contains('torn') || tk.classList.contains('cutting')) return;
-      tk.style.setProperty('--dx', dx + 'px'); tk.style.setProperty('--rot', rot + 'deg');
-      stub.style.transform = '';
+    const setStubH = () => tk.style.setProperty('--stubH', stub.offsetHeight + 'px');   // phones: tear line on top of the stub
+    requestAnimationFrame(setStubH); addEventListener('resize', setStubH);
+    if (!tk.classList.contains('used')) return;
+    const seen = store.get(TORN_SEEN, []), id = tk.dataset.no;
+    if (seen.includes(id)) { tk.classList.add('torn-done'); return; }        // already watched it tear
+    setTimeout(() => {                                                       // first time: play the tear
       tk.classList.add('cutting');
-      setTimeout(() => { tk.classList.remove('cutting'); tk.classList.add('torn'); }, dx ? 120 : 900);
-    };
-    $('.t-tear-btn', tk).addEventListener('click', () => tear());
-    $('.t-restore', tk).addEventListener('click', () => { tk.classList.remove('torn'); stub.style.transform = ''; });
-
-    // drag the stub left to tear it off (desktop layout)
-    let start = null;
-    stub.addEventListener('pointerdown', e => {
-      if (innerWidth <= 860 || tk.classList.contains('torn')) return;
-      start = e.clientX; stub.setPointerCapture(e.pointerId);
-      stub.classList.add('dragging'); stub.classList.remove('snap');
-    });
-    stub.addEventListener('pointermove', e => {
-      if (start == null) return;
-      const dx = Math.min(0, e.clientX - start);
-      stub.style.transform = `translateX(${dx}px) rotate(${dx / 14}deg)`;
-      stub.style.transformOrigin = '100% 0';
-    });
-    const end = e => {
-      if (start == null) return;
-      const dx = Math.min(0, e.clientX - start); start = null;
-      stub.classList.remove('dragging');
-      if (dx < -90) tear(dx, dx / 14);
-      else { stub.classList.add('snap'); stub.style.transform = ''; }
-    };
-    stub.addEventListener('pointerup', end);
-    stub.addEventListener('pointercancel', end);
+      setTimeout(() => { tk.classList.remove('cutting'); tk.classList.add('torn'); store.set(TORN_SEEN, [...seen, id]); }, 900);
+    }, 700);
   }
 
   /* =========================================================
@@ -1115,8 +1200,31 @@
   /* =========================================================
      INIT
      ========================================================= */
+  // small labels so nobody mistakes test mode for the real thing
+  function applyModeUI() {
+    const badge = $('.pay-option .badge'), note = $('#payNote');
+    if (Backend.live && Backend.sandbox) {
+      badge.textContent = 'Test mode';
+      note.innerHTML = '<b>Test mode (PayHere sandbox):</b> use a PayHere test card. No real money is taken.';
+      document.body.insertAdjacentHTML('beforeend', '<div class="mode-banner">TEST MODE · payments are not real</div>');
+    } else if (Backend.live) {
+      badge.hidden = true;
+      note.innerHTML = 'You will pay on PayHere\'s secure page. Your tickets appear here as soon as the payment is confirmed.';
+    } else {
+      badge.textContent = 'Demo';
+      note.innerHTML = 'Payments are not connected on this copy of the site. The pay button runs a <b>demo</b> so you can see the whole flow.';
+    }
+  }
+
   async function init() {
-    bookings = await DB.all();
+    await Backend.init();
+    if (Backend.live) {
+      [liveTaken, bookings] = await Promise.all([DB.bookedSeatIds().catch(() => []), DB.all().catch(() => [])]);
+      myRefs = [...new Set([...myRefs, ...bookings.map(b => b.ref)])].filter(r => bookings.some(b => b.ref === r));
+      // keep the map fresh while someone is choosing seats
+      setInterval(async () => { if (location.hash === '#seats' && !document.hidden) syncTaken(await DB.bookedSeatIds().catch(() => liveTaken)); }, 20000);
+    } else bookings = await DB.all();
+    applyModeUI();
     buildHall();
     bindAdmin();
     bindMap();
@@ -1171,6 +1279,7 @@
     };
 
     $('#snowToggle').onclick = () => { const on = Snow.toggle(); $('#snowToggle').classList.toggle('off', !on); };
+    $('#resetDemo').hidden = Backend.live;
     $('#resetDemo').onclick = async () => { if (confirm('Clear ALL demo bookings and tickets on this device?')) { await DB.reset(); localStorage.removeItem('wv_my_refs'); location.hash = 'home'; location.reload(); } };
     $('#findForm').addEventListener('submit', findBooking);
 

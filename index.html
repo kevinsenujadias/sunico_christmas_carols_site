@@ -324,7 +324,7 @@
               </div>
               <span class="badge">Coming soon</span>
             </div>
-            <p class="note">Payment is not connected yet. For now, the pay button runs a <b>demo</b> so you can see the whole flow and the tickets.</p>
+            <p class="note" id="payNote"></p>
           </fieldset>
 
           <label class="check"><input type="checkbox" name="agree" required /><span>I understand tickets are for the seats shown and cannot be refunded.</span></label>
@@ -360,7 +360,7 @@
           <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Checkout</span><i></i><span class="step on">3 · Tickets</span>
         </div>
         <h2 id="ticketsTitle">Your tickets</h2>
-        <p class="lead" id="ticketsLead">Show the QR code at the door. Staff scan it to check you in. (Drag a stub to the left, or press <b>Tear</b>, for fun.)</p>
+        <p class="lead" id="ticketsLead">Show the QR code at the door. When staff scan it, your ticket tears off and is marked <b>ADMITTED</b>. Anyone can scan the QR to check it's genuine.</p>
       </div>
       <div class="tickets" id="ticketList"></div>
       <div class="tickets-empty" id="ticketsEmpty" hidden>
@@ -400,7 +400,7 @@
           <h3>Enter staff PIN</h3>
           <label class="field"><input id="pinInput" type="password" inputmode="numeric" placeholder="••••" autocomplete="off" /></label>
           <button class="btn btn-gold btn-block" type="submit">Unlock</button>
-          <p class="note">Demo PIN is 2026. Change it in js/app.js.</p>
+          <p class="note" id="pinNote">Demo PIN is 2026.</p>
         </form>
       </div>
 
@@ -410,7 +410,7 @@
         <div class="checkin">
           <div class="ci-left">
             <h3>Door check-in</h3>
-            <p class="lead small">Scan the QR on the ticket, or type the ticket number (e.g. <span class="mono">WV-7K3QX9-C4</span>) or a booking number to see all its tickets.</p>
+            <p class="lead small">Scan the QR on the ticket (or on the email), or type the ticket number (e.g. <span class="mono">WV-7K3QX9-C4</span>) or a booking number to see all its tickets.</p>
             <form id="ciForm" class="ci-form">
               <input id="ciInput" placeholder="Ticket or booking number" autocomplete="off" style="text-transform:uppercase" />
               <button class="btn btn-gold" type="submit">Check in</button>
@@ -419,6 +419,18 @@
             <div class="ci-cam" id="ciCam" hidden><video id="ciVideo" playsinline muted></video><span class="ci-frame"></span></div>
           </div>
           <div class="ci-result" id="ciResult" hidden></div>
+        </div>
+
+        <div class="cash-card">
+          <h3>Record an office (cash) sale</h3>
+          <p class="lead small">Seats sold at the school office must be recorded here, so nobody can buy them online.</p>
+          <form id="cashForm" class="cash-form" autocomplete="off">
+            <label class="field"><span>Seats</span><input name="seats" required placeholder="e.g. C4, C5" style="text-transform:uppercase" /></label>
+            <label class="field"><span>Buyer name</span><input name="name" placeholder="optional" /></label>
+            <label class="field"><span>Phone</span><input name="phone" type="tel" placeholder="optional" /></label>
+            <label class="field"><span>Email</span><input name="email" type="email" placeholder="optional · sends the tickets" /></label>
+            <button class="btn btn-gold" type="submit">Mark as sold</button>
+          </form>
         </div>
 
         <div class="bk-table-card">
@@ -434,7 +446,7 @@
               <tbody id="bkBody"></tbody>
             </table>
           </div>
-          <p class="note">Records are saved in this browser for now. To share them across staff phones and the PayHere confirmation, connect a database (see js/db.js).</p>
+
         </div>
       </div>
     </section>
@@ -473,6 +485,7 @@
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/snow.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/payment.js"></script>
   <script src="js/app.js"></script>
 </body>

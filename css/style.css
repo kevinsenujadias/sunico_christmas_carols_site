@@ -838,3 +838,81 @@ tr.bk-row:hover{background:rgba(255,255,255,.04)}
   .map-wrap.zoomed .minimap{display:block;position:absolute;left:.5rem;bottom:.5rem;z-index:4;width:104px;height:auto;
     border-radius:10px;background:rgba(10,15,31,.88);border:1px solid var(--line-2);box-shadow:0 8px 20px rgba(0,0,0,.5);touch-action:none;cursor:pointer}
 }
+
+/* booking waiting for PayHere's confirmation */
+.bk-wait{display:flex;gap:1rem;align-items:flex-start;padding:1.2rem 1.3rem;border-radius:18px;background:var(--panel);border:1px dashed var(--line-2)}
+.bk-wait b{display:block;font-size:1.05rem;margin-bottom:.2rem}
+.bk-wait p{color:var(--muted);font-size:.9rem;line-height:1.5}
+.bk-wait.warn{border-color:#f5a524;background:rgba(245,165,36,.07)}
+.spin{flex:none;width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:var(--gold);animation:spin .9s linear infinite;margin-top:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mode-banner{position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:45;padding:.4rem .9rem;border-radius:99px;font-size:.75rem;font-weight:600;letter-spacing:.04em;
+  background:rgba(245,165,36,.15);color:#f5c46a;border:1px solid rgba(245,165,36,.45);backdrop-filter:blur(8px);pointer-events:none}
+@media (max-width:1024px){.mode-banner{top:66px}}
+.cash-form{display:grid;grid-template-columns:1.4fr 1.2fr 1fr 1.4fr auto;gap:.6rem;align-items:end;margin-top:1rem}
+.cash-form .field{margin:0}
+.cash-card{padding:1.4rem;border-radius:22px;background:var(--panel);border:1px solid var(--line)}
+.cash-card h3{font-family:var(--f-serif);font-size:1.6rem;font-weight:600}
+@media (max-width:860px){.cash-form{grid-template-columns:1fr}}
+.status.warn{background:rgba(245,165,36,.14);color:#f5a524}
+.warn-txt{display:block;color:#f5a524!important;margin-top:.2rem}
+.stats small+small,.stats b+small{display:block;margin-top:.2rem;font-size:.7rem;letter-spacing:.04em;text-transform:none;color:var(--dim)}
+.ci-result.unpaid{border-color:var(--taken);background:rgba(232,32,63,.08)}.ci-result.unpaid .ci-title{color:#ff6b81}.ci-result.unpaid .ci-title::before{background:var(--taken)}
+
+/* =========================================================
+   TICKET v2 — Winter Vespers artwork + stub (seat, QR, name)
+   ========================================================= */
+.ticket.tk{--accent:#f6dc93;--stub1:#6b0d1f;--stub2:#2a0610;grid-template-columns:27% 73%;height:auto}
+.ticket.tk.silver{--accent:#e6eef9;--stub1:#1d3577;--stub2:#0b1433}
+.ticket.tk.bronze{--accent:#f0cdb0;--stub1:#5a2a16;--stub2:#24100a}
+.tk .t-part{background:none}
+.tk-main{padding:0!important;aspect-ratio:2964/1160;background:#0a0f1f!important}
+.tk-face{position:absolute!important;inset:0;width:100%;height:100%;object-fit:cover;z-index:0!important}
+.tk-admit-one{position:absolute!important;right:.9rem;top:.8rem;padding:.3rem .7rem;border-radius:99px;font-size:.68rem;font-weight:700;letter-spacing:.18em;
+  color:var(--accent);background:rgba(10,15,31,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(4px)}
+.tk-stub{background:radial-gradient(120% 90% at 20% 0%,var(--stub1),var(--stub2) 80%)!important;padding:1rem 1.1rem!important;
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:space-between;gap:.5rem;color:#fff}
+.tk-stub::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background-image:radial-gradient(circle,#fff 1px,transparent 1.5px);background-size:30px 30px;-webkit-mask:linear-gradient(#000,transparent 70%);mask:linear-gradient(#000,transparent 70%)}
+.tk-tier{display:flex;align-items:center;gap:.4rem;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.tk-tier img{width:26px;height:26px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.tk-mid{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.tk-seat small{display:block;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;opacity:.7}
+.tk-seat b{display:block;font-family:var(--f-serif);font-size:2.6rem;line-height:1;color:var(--accent)}
+.tk-seat span{font-size:.7rem;opacity:.75}
+.tk-qr{flex:none;width:108px;height:108px;padding:4px;background:#fff;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.tk-qr svg{width:100%;height:100%;display:block;stroke:none}
+.tk-who b{display:block;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-who span{font-family:ui-monospace,Consolas,monospace;font-size:.66rem;letter-spacing:.06em;opacity:.7}
+.tk .t-perf{left:27%}
+.tk .t-scissor{left:27%}
+.tk .t-tear-btn{left:27%}
+.tk .t-hint{left:calc(27% - 10px)}
+.tk .t-admit{left:auto;right:30%;top:55%}
+.ticket.tk.used .t-admit{transform:translate(0,-50%) rotate(-10deg) scale(1)}
+
+@media (max-width:860px){
+  .ticket.tk{grid-template-columns:1fr;grid-template-rows:auto auto}
+  .tk-main{order:1;min-height:0!important;height:auto;border-radius:16px 16px 0 0!important;
+    -webkit-mask:radial-gradient(circle 14px at 0 100%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 100%,transparent 98%,#000) right/51% 100% no-repeat!important;
+            mask:radial-gradient(circle 14px at 0 100%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 100%,transparent 98%,#000) right/51% 100% no-repeat!important}
+  .tk-stub{order:2;border-radius:0 0 16px 16px!important;min-height:0!important;height:auto;
+    -webkit-mask:radial-gradient(circle 14px at 0 0,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 0,transparent 98%,#000) right/51% 100% no-repeat!important;
+            mask:radial-gradient(circle 14px at 0 0,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 14px at 100% 0,transparent 98%,#000) right/51% 100% no-repeat!important}
+  .tk-qr{width:124px;height:124px}
+  .tk .t-perf{left:14px;right:14px;top:auto;bottom:var(--stubH,182px)}
+  .tk .t-tear-btn{left:auto;right:1rem;top:auto;bottom:calc(var(--stubH,182px) - 16px)}
+  .tk .t-admit{left:50%;right:auto;top:30%;transform:translate(-50%,-50%) rotate(-8deg) scale(2)}
+  .ticket.tk.used .t-admit{transform:translate(-50%,-50%) rotate(-8deg) scale(1)}
+  .tk-admit-one{font-size:.58rem;top:.5rem;right:.5rem}
+}
+@media print{ .tk-face{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
+.ci-who .link-btn{margin:.4rem 0 0;font-size:.85rem;color:var(--gold-2)}
+
+/* torn after check-in */
+.ticket.torn-done .t-stub{visibility:hidden}
+.ticket.torn-done .t-perf{opacity:0}
+.ticket.torn .t-stub{pointer-events:none}
+.t-admit small{display:block;font-size:.62rem;letter-spacing:.12em;text-align:center;margin-top:.1rem;opacity:.85}
+.ticket.used .t-admit::after{content:none}
+.tk-stub{cursor:default}

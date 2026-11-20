@@ -1,0 +1,26 @@
+# Netlify settings for Winter Vespers
+[build]
+  publish = "."                       # the site is plain HTML, nothing to build
+
+[functions]
+  directory = "netlify/functions"     # the small server parts (payments, bookings)
+  node_bundler = "esbuild"
+
+# short link used inside the ticket QR codes: /v?t=...&s=...  -> the verification page
+[[redirects]]
+  from = "/v"
+  to = "/verify.html"
+  status = 200
+
+# never serve the database file or the server code as web pages
+[[redirects]]
+  from = "/supabase/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
