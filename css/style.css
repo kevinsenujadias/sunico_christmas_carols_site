@@ -20,6 +20,8 @@
   --muted:#a6afc6;
   --dim:#6f7894;
 
+  --vip:#a970ff;
+  --vip-2:#d6bcff;
   --gold:#e7bd5a;
   --gold-2:#f6dc93;
   --gold-deep:#a97a1f;
@@ -195,6 +197,7 @@ em{font-style:italic;font-family:var(--f-serif);color:var(--gold-2)}
   transition:transform .5s var(--ease),border-color .3s,box-shadow .5s;transform-style:preserve-3d;
 }
 .tier-card::before{content:"";position:absolute;inset:-40% -40% auto;height:80%;border-radius:50%;filter:blur(50px);opacity:.25;transition:opacity .4s}
+.tier-card[data-tier=vip]::before{background:var(--vip)}
 .tier-card[data-tier=gold]::before{background:var(--gold)}
 .tier-card[data-tier=silver]::before{background:#8fb3ff}
 .tier-card[data-tier=bronze]::before{background:var(--bronze)}
@@ -206,6 +209,7 @@ em{font-style:italic;font-family:var(--f-serif);color:var(--gold-2)}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
 @keyframes coinSpin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
 .tier-card h3{font-family:var(--f-serif);font-size:2rem;font-weight:600}
+.tier-card[data-tier=vip] h3{color:var(--vip-2)}
 .tier-card[data-tier=gold] h3{color:var(--gold-2)}
 .tier-card[data-tier=silver] h3{color:var(--silver)}
 .tier-card[data-tier=bronze] h3{color:#e0a47a}
@@ -278,6 +282,7 @@ button.lg:hover{border-color:var(--line-2);color:var(--text)}
 button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,189,90,.08)}
 .lg.static{border-color:transparent}
 .sw{width:14px;height:12px;border-radius:3px 3px 4px 4px;display:inline-block}
+.sw.vip{background:var(--vip);box-shadow:0 0 8px rgba(169,112,255,.7)}
 .sw.gold{background:var(--gold)}
 .sw.silver{background:var(--silver)}
 .sw.bronze{background:var(--bronze)}
@@ -294,29 +299,30 @@ button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,
 #hall .stage-label{fill:#fff4d6;font-family:var(--f-serif);font-size:24px;letter-spacing:10px;font-weight:600}
 #hall .stage-sub{fill:rgba(255,244,214,.6);font-size:11px;letter-spacing:4px;font-weight:500}
 #hall .zone-label{font-size:12px;letter-spacing:4px;fill:var(--muted);font-weight:500}
-#hall .row-lbl{font-size:15px;font-weight:700;fill:var(--muted)}
+#hall .row-lbl{font-size:17px;font-weight:700;fill:var(--muted)}
 
 .seat{cursor:pointer;outline:none}
 .seat-in{transition:transform .25s var(--spring);transform-box:fill-box;transform-origin:center}
 .seat .s-body{transition:fill .25s,opacity .3s,filter .25s}
+.seat.vip .s-body{fill:var(--vip)}
 .seat.gold .s-body{fill:var(--gold)}
 .seat.silver .s-body{fill:var(--silver)}
 .seat.bronze .s-body{fill:var(--bronze)}
-.seat .s-back{fill:rgba(0,0,0,.28)}
-.seat:hover .seat-in,.seat:focus-visible .seat-in{transform:scale(1.25)}
+.seat .s-back{fill:rgba(0,0,0,.45)}
+.seat:hover .seat-in,.seat:focus-visible .seat-in{transform:scale(1.12)}
 .seat:hover .s-body{filter:brightness(1.2)}
 .seat.taken{cursor:not-allowed}
 .seat.taken .s-body{fill:var(--taken);stroke:#5c0614;stroke-width:1.5}
 .seat.taken .s-back{fill:#6d0a1a}
 .seat.taken .s-x{display:block}
-.seat .s-x{display:none;stroke:#fff;stroke-width:2.8}
-#hall .s-num{font-size:13px;font-weight:700;fill:rgba(10,15,31,.72);pointer-events:none}
+.seat .s-x{display:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round}
+#hall .s-num{font-size:13.5px;font-weight:800;fill:#0a0f1f;pointer-events:none;letter-spacing:-.2px}
 .seat.taken .s-num,.seat.picked .s-num{display:none}
 .seat .s-hit{pointer-events:all}
 .seat.taken:hover .seat-in{transform:none}
 .seat.picked .s-body{fill:var(--pick);filter:drop-shadow(0 0 6px rgba(52,211,153,.9))}
 .seat.picked .s-check{display:block}
-.seat .s-check{display:none;stroke:#0a0f1f;stroke-width:2.6}
+.seat .s-check{display:none;stroke:#0a0f1f;stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .seat.pop .seat-in{animation:seatPop .45s var(--spring)}
 @keyframes seatPop{0%{transform:scale(1)}40%{transform:scale(1.7)}100%{transform:scale(1)}}
 #hall.filtering .seat:not(.hl):not(.picked) .s-body{opacity:.18}
@@ -330,7 +336,7 @@ button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,
   font-size:.82rem;white-space:nowrap;opacity:0;transform:translate(-50%,-120%) scale(.9);transition:opacity .15s,transform .15s;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .tooltip.show{opacity:1;transform:translate(-50%,-130%) scale(1)}
 .tooltip b{display:block;font-size:.95rem}
-.tooltip .t-gold{color:var(--gold-2)}.tooltip .t-silver{color:var(--silver)}.tooltip .t-bronze{color:#e0a47a}
+.tooltip .t-vip{color:var(--vip-2)}.tooltip .t-gold{color:var(--gold-2)}.tooltip .t-silver{color:var(--silver)}.tooltip .t-bronze{color:#e0a47a}
 
 .best{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:1rem 1.2rem;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
 .best select,.field select{appearance:none;background:var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a6afc6' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right .7rem center/14px;
@@ -358,7 +364,7 @@ button.lg.active{border-color:var(--gold);color:var(--text);background:rgba(231,
   background:var(--panel-2);border:1px solid var(--line);animation:chipIn .35s var(--spring)}
 .chip i{width:8px;height:8px;border-radius:50%}
 .chip{border-color:rgba(52,211,153,.35)}
-.chip.gold i{background:var(--gold)}.chip.silver i{background:var(--silver)}.chip.bronze i{background:var(--bronze)}
+.chip.vip i{background:var(--vip)}.chip.gold i{background:var(--gold)}.chip.silver i{background:var(--silver)}.chip.bronze i{background:var(--bronze)}
 .chip button{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:.9rem;line-height:1}
 .chip button:hover{background:rgba(255,255,255,.12);color:#fff}
 @keyframes chipIn{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
@@ -404,7 +410,7 @@ legend{font-family:var(--f-serif);font-size:1.4rem;font-weight:600;padding:0 .5r
 .co-lines li{display:flex;justify-content:space-between;gap:.6rem;align-items:center}
 .co-lines li span:first-child{display:flex;align-items:center;gap:.5rem}
 .co-lines i{width:8px;height:8px;border-radius:50%}
-.co-lines .gold i{background:var(--gold)}.co-lines .silver i{background:var(--silver)}.co-lines .bronze i{background:var(--bronze)}
+.co-lines .vip i{background:var(--vip)}.co-lines .gold i{background:var(--gold)}.co-lines .silver i{background:var(--silver)}.co-lines .bronze i{background:var(--bronze)}
 
 /* ---------- modal / lightbox / toast ---------- */
 .modal,.lightbox{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(5,8,18,.75);backdrop-filter:blur(8px);animation:fade .3s}
@@ -649,7 +655,7 @@ legend{font-family:var(--f-serif);font-size:1.4rem;font-weight:600;padding:0 .5r
 .stats em{font-style:normal;font-family:inherit;color:var(--dim);font-size:1.2rem}
 .stats .left{display:flex;gap:1rem;font-size:1.5rem}
 .stats .left i{display:block;font-family:var(--f-sans);font-style:normal;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.stats .left .g{color:var(--gold)}.stats .left .s{color:var(--silver)}.stats .left .b{color:var(--bronze)}
+.stats .left .v{color:var(--vip-2)}.stats .left .g{color:var(--gold)}.stats .left .s{color:var(--silver)}.stats .left .b{color:var(--bronze)}
 
 .checkin{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;align-items:start}
 .ci-left,.ci-result,.bk-table-card{padding:1.4rem;border-radius:22px;background:var(--panel);border:1px solid var(--line)}
@@ -679,7 +685,7 @@ legend{font-family:var(--f-serif);font-size:1.4rem;font-weight:600;padding:0 .5r
 .ci-tickets em{color:#2fd17a;font-style:normal;font-family:inherit;font-weight:600}
 .ci-tickets .link-btn{margin:0;font-size:.8rem}
 .seat-tag{display:inline-block;padding:.15rem .45rem;margin:.1rem .25rem .1rem 0;border-radius:6px;font-weight:700;font-size:.8rem;color:#1a1206}
-.seat-tag.gold{background:var(--gold)}.seat-tag.silver{background:var(--silver)}.seat-tag.bronze{background:var(--bronze)}
+.seat-tag.vip{background:var(--vip);color:#fff}.seat-tag.gold{background:var(--gold)}.seat-tag.silver{background:var(--silver)}.seat-tag.bronze{background:var(--bronze)}
 .seat-tag.in{outline:2px solid #2fd17a;outline-offset:1px}
 
 .bk-tools{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem}
@@ -916,3 +922,98 @@ tr.bk-row:hover{background:rgba(255,255,255,.04)}
 .t-admit small{display:block;font-size:.62rem;letter-spacing:.12em;text-align:center;margin-top:.1rem;opacity:.85}
 .ticket.used .t-admit::after{content:none}
 .tk-stub{cursor:default}
+
+
+/* =========================================================
+   NEW HALL PLAN: 4 tiers, two floors, VIP
+   ========================================================= */
+.tier-grid.four{grid-template-columns:repeat(4,1fr);gap:1.1rem}
+.tier-grid.four .tier-card{padding:1.8rem 1.2rem 1.4rem}
+.tier-grid.four .coin-wrap{width:150px;height:150px}
+@media (max-width:1100px){.tier-grid.four{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:860px){.tier-grid.four{grid-template-columns:1fr}}
+.tier-card.vip{border-color:rgba(169,112,255,.55);background:linear-gradient(180deg,rgba(169,112,255,.16),rgba(255,255,255,.02));
+  box-shadow:0 0 0 1px rgba(169,112,255,.25),0 30px 70px -35px rgba(169,112,255,.7)}
+.tier-card.vip .btn-outline{border-color:var(--vip);color:var(--vip-2)}
+.tier-card.vip .btn-outline:hover{background:var(--vip);color:#fff}
+.tier-card.vip li::before{color:var(--vip)}
+.tier-flag{position:absolute;top:1rem;right:-2.4rem;transform:rotate(38deg);padding:.3rem 2.6rem;font-size:.66rem;font-weight:800;letter-spacing:.16em;
+  text-transform:uppercase;color:#1a0b33;background:linear-gradient(90deg,#f6dc93,#e7bd5a);z-index:2}
+
+/* floor tabs */
+.floor-tabs{display:flex;gap:.4rem;padding:.9rem 1.2rem 0}
+.floor-tabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.7rem .9rem;border-radius:12px;font-weight:600;
+  border:1px solid var(--line);color:var(--muted);background:rgba(255,255,255,.03);transition:.25s}
+.floor-tabs button small{font-weight:500;color:var(--dim);font-size:.75rem}
+.floor-tabs button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.floor-tabs button.on{color:var(--text);border-color:var(--gold);background:rgba(231,189,90,.1)}
+.floor-tabs button.on small{color:var(--gold-2)}
+@media (max-width:700px){.floor-tabs{padding:.6rem .5rem 0}.floor-tabs button{padding:.6rem .5rem;font-size:.85rem}.floor-tabs button small{display:none}}
+button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,112,255,.12)}
+
+/* hall drawing */
+#hall .hall-wall{fill:rgba(255,255,255,.015);stroke:rgba(255,255,255,.08);stroke-width:2}
+#hall .box{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.18);stroke-width:1.5;stroke-dasharray:6 5}
+#hall .box.lift{fill:rgba(140,160,200,.08)}
+#hall .box.service{fill:rgba(255,255,255,.05)}
+#hall .box-label{font-size:13px;letter-spacing:3px;fill:var(--muted);font-weight:600}
+#hall .rail{fill:rgba(246,220,147,.08);stroke:rgba(246,220,147,.4);stroke-width:1.5}
+#hall .rail-label{font-size:13px;letter-spacing:5px;fill:rgba(255,244,214,.8);font-weight:600}
+#hall .tier-note{font-size:12px;letter-spacing:4px;font-weight:700}
+#hall .tier-note.vip{fill:var(--vip-2)}#hall .tier-note.gold{fill:var(--gold-2)}#hall .tier-note.silver{fill:var(--silver)}#hall .tier-note.bronze{fill:#e0a47a}
+/* VIP seats glow a little so the front rows stand out */
+.seat.vip:not(.taken):not(.picked) .s-body{filter:drop-shadow(0 0 3px rgba(169,112,255,.75))}
+.seat.vip .s-num{fill:#fff!important}
+
+/* VIP ticket */
+.ticket.tk.vip{--accent:#f6dc93;--stub1:#4b1d94;--stub2:#170a33}
+.ticket.tk.vip{box-shadow:0 0 0 2px rgba(246,220,147,.7),0 0 40px -6px rgba(169,112,255,.75),0 30px 60px -30px rgba(0,0,0,.8)}
+.tk-vip-band{display:flex;align-items:center;justify-content:center;gap:.45rem;margin:-1rem -1.1rem .1rem;padding:.38rem .5rem;
+  font-size:.7rem;font-weight:800;letter-spacing:.22em;color:#2a1250;background:linear-gradient(90deg,#c9a24a,#f6dc93,#c9a24a);
+  background-size:200% 100%;animation:vipShine 3.5s linear infinite}
+.tk-vip-band svg{width:18px;height:12px;fill:#2a1250}
+@keyframes vipShine{to{background-position:-200% 0}}
+.ticket.tk.vip .tk-admit-one{color:#f6dc93;border-color:rgba(246,220,147,.6);background:rgba(43,14,90,.7)}
+
+
+/* =========================================================
+   BIG READABLE SEATS: the map is a window you zoom/drag in,
+   opening at Regal-size seats on every screen
+   ========================================================= */
+.map-wrap{height:min(72vh,780px);padding:0;margin:0 1rem;border-radius:16px;background:rgba(0,0,0,.2);overflow:hidden}
+#hall{width:100%;height:100%;max-height:none}
+.map-hint{display:block;text-align:center;font-size:.85rem;color:var(--muted);padding:.2rem .5rem .6rem}
+.map-hint .h-zoomed{display:none}
+.map-card:has(.map-wrap.zoomed) .map-hint .h-out{display:none}
+.map-card:has(.map-wrap.zoomed) .map-hint .h-zoomed{display:inline}
+.seat.vip .s-num{fill:#fff!important}
+.seat.bronze .s-num{fill:#1d0d04}
+.seat.picked .s-body{stroke:#fff;stroke-width:2}
+/* mini map on every screen once zoomed */
+.map-wrap.zoomed .minimap{display:block;position:absolute;left:.7rem;bottom:.7rem;z-index:4;width:170px;height:auto;
+  border-radius:10px;background:rgba(10,15,31,.9);border:1px solid var(--line-2);box-shadow:0 8px 20px rgba(0,0,0,.5);touch-action:none;cursor:pointer}
+@media (max-width:700px){
+  .map-wrap,.map-wrap.zoomed{aspect-ratio:auto;height:min(64svh,600px);margin:0 .4rem}
+  .map-wrap.zoomed .minimap{width:96px;left:.5rem;bottom:.5rem}
+  .map-wrap .zoom{display:flex!important}
+}
+
+/* "Gallery upstairs" button floating on the map */
+.floor-jump{position:absolute;top:.7rem;left:.7rem;z-index:5;display:flex;align-items:center;gap:.6rem;padding:.55rem .95rem .55rem .65rem;border-radius:14px;
+  text-align:left;color:#1a1204;background:linear-gradient(135deg,#f6dc93,#e7bd5a);box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(246,220,147,.7);
+  animation:jumpPulse 2.4s ease-out infinite;cursor:pointer}
+.floor-jump svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;animation:jumpArrow 1.4s ease-in-out infinite}
+.floor-jump b{display:block;font-size:.92rem;line-height:1.1}
+.floor-jump small{display:block;font-size:.72rem;font-weight:600;opacity:.75}
+.floor-jump.down{color:var(--text);background:rgba(16,24,58,.92);border:1px solid var(--line-2);animation:none}
+.floor-jump.down svg{animation:none}
+@keyframes jumpPulse{0%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(246,220,147,.6)}70%,100%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 14px rgba(246,220,147,0)}}
+@keyframes jumpArrow{50%{transform:translateY(-3px)}}
+@media (max-width:700px){.floor-jump{top:.5rem;left:.5rem;padding:.45rem .75rem .45rem .5rem}.floor-jump b{font-size:.82rem}.floor-jump small{font-size:.66rem}}
+
+/* floor tabs: bigger, the Gallery tab glows so people notice it */
+.floor-tabs button{padding:.85rem 1rem;font-size:1rem}
+.floor-tabs button[data-floor=gallery]:not(.on){border-color:rgba(246,220,147,.55);color:var(--gold-2);box-shadow:inset 0 0 0 1px rgba(246,220,147,.15),0 0 18px -6px rgba(246,220,147,.6)}
+.floor-tabs button[data-floor=gallery]:not(.on) small{color:var(--gold-2)}
+@media (max-width:700px){.floor-tabs button small{display:inline;font-size:.68rem}.floor-tabs button{flex-direction:column;gap:.1rem}.floor-tabs button svg{display:none}}
+#hall .row-lbl.aisle{fill:var(--gold-2);font-size:19px;font-weight:800}

@@ -17,8 +17,10 @@ export function buildEmail(b, origin) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td width="150" valign="top"><a href="${verifyUrl(origin, t.ticketId)}"><img src="${qrImageUrl(origin, t.ticketId)}" width="140" height="140" alt="QR code for seat ${esc(t.seat)}" style="display:block;border:1px solid #eadfcd;border-radius:8px"></a></td>
         <td valign="top" style="padding-left:16px;font-family:Arial,Helvetica,sans-serif;color:#2b1d12">
-          <div style="font-size:12px;letter-spacing:2px;color:#9a7b4f;text-transform:uppercase">${esc(TIERS[t.tier]?.label || t.tier)} · ${rs(t.price)}</div>
-          <div style="font-family:Georgia,serif;font-size:30px;font-weight:bold;margin:4px 0">Row ${esc(t.row)} · Seat ${esc(t.num)}</div>
+          ${t.tier === 'vip'
+            ? `<div style="display:inline-block;font-size:12px;font-weight:bold;letter-spacing:2px;color:#f6dc93;background:#4b1d94;border-radius:99px;padding:4px 12px">♛ VIP · ${rs(t.price)}</div>`
+            : `<div style="font-size:12px;letter-spacing:2px;color:#9a7b4f;text-transform:uppercase">${esc(TIERS[t.tier]?.label || t.tier)} · ${rs(t.price)}</div>`}
+          <div style="font-family:Georgia,serif;font-size:30px;font-weight:bold;margin:4px 0">${/^G[A-Z]/.test(t.row) ? 'Gallery · ' : ''}Row ${esc(t.row)} · Seat ${esc(t.num)}</div>
           <div style="font-size:13px;color:#6b5a48">Ticket ${esc(t.ticketId)}</div>
           <div style="font-size:12px;color:#8a7a68;margin-top:8px">Show this QR code at the door. It admits one person, once.</div>
         </td></tr></table>

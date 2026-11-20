@@ -97,42 +97,58 @@
       <!-- Tiers -->
       <section class="block" id="tiers">
         <div class="block-head reveal">
-          <p class="eyebrow">Three coins · three ways to listen</p>
+          <p class="eyebrow">Four coins · four ways to listen</p>
           <h2>Pick your <em>tier</em></h2>
-          <p class="lead">Seats closest to the stage carry the Gold coin. Every seat in Namal Hall has a clear line to the choir.</p>
+          <p class="lead">The first three rows are VIP. The closer to the stage, the higher the coin. Every seat in Namal Hall has a clear line to the choir.</p>
         </div>
-        <div class="tier-grid">
-          <article class="tier-card reveal" data-tier="gold">
+        <div class="tier-grid four">
+          <article class="tier-card reveal vip" data-tier="vip">
+            <span class="tier-flag">Best seats</span>
+            <div class="coin-wrap"><img class="coin" src="assets/img/coin-vip.png" alt="VIP coin" /></div>
+            <h3>VIP</h3>
+            <p class="price">Rs. 5,000</p>
+            <ul>
+              <li>Rows A–C, the first three rows</li>
+              <li>Right in front of the stage &amp; choir</li>
+              <li>VIP coin ticket</li>
+            </ul>
+            <p class="avail"><span data-left="vip">–</span> seats left</p>
+            <button class="btn btn-outline" data-pick-tier="vip">Choose VIP seats</button>
+          </article>
+          <article class="tier-card reveal" data-delay="1" data-tier="gold">
+            
             <div class="coin-wrap"><img class="coin" src="assets/img/coin-gold.png" alt="Gold coin" /></div>
             <h3>Gold</h3>
             <p class="price">Rs. 3,500</p>
             <ul>
-              <li>Rows A–D, front of the floor</li>
-              <li>Closest to the stage &amp; choir</li>
+              <li>Ground floor rows D–I</li>
+              <li>The whole upstairs gallery</li>
               <li>Gold coin ticket</li>
             </ul>
             <p class="avail"><span data-left="gold">–</span> seats left</p>
             <button class="btn btn-outline" data-pick-tier="gold">Choose Gold seats</button>
           </article>
-          <article class="tier-card reveal" data-delay="1" data-tier="silver">
+          <article class="tier-card reveal" data-delay="2" data-tier="silver">
+            
             <div class="coin-wrap"><img class="coin" src="assets/img/coin-silver.png" alt="Silver coin" /></div>
             <h3>Silver</h3>
             <p class="price">Rs. 2,500</p>
             <ul>
-              <li>Rows E–J, centre floor</li>
-              <li>Best balance of view &amp; sound</li>
+              <li>Ground floor rows J–N</li>
+              <li>Centre of the hall, great sound</li>
               <li>Silver coin ticket</li>
             </ul>
             <p class="avail"><span data-left="silver">–</span> seats left</p>
             <button class="btn btn-outline" data-pick-tier="silver">Choose Silver seats</button>
           </article>
-          <article class="tier-card reveal" data-delay="2" data-tier="bronze">
+          <article class="tier-card reveal" data-delay="3" data-tier="bronze">
+            
             <div class="coin-wrap"><img class="coin" src="assets/img/coin-bronze.png" alt="Bronze coin" /></div>
             <h3>Bronze</h3>
             <p class="price">Rs. 1,500</p>
             <ul>
-              <li>Gallery rows K–N, upper level</li>
-              <li>Elevated, full-stage view</li>
+              <li>Rows P–W, beside the lift</li>
+              <li>Back of the ground floor</li>
               <li>Bronze coin ticket</li>
             </ul>
             <p class="avail"><span data-left="bronze">–</span> seats left</p>
@@ -188,7 +204,7 @@
           </div>
           <div class="info-card reveal" data-delay="1">
             <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            <h4>Namal Hall</h4><p>About 300 seats over the ground floor and the gallery.</p>
+            <h4>Namal Hall</h4><p>1,228 seats over the ground floor and the upstairs gallery.</p>
           </div>
           <div class="info-card reveal" data-delay="2">
             <svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M9 7v12" stroke-dasharray="2 2"/></svg>
@@ -215,25 +231,31 @@
 
       <div class="seat-layout">
         <div class="map-card">
+          <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
+            <button class="on" data-floor="ground" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V10l7-5 7 5v10"/></svg>Ground floor <small>VIP · Gold · Silver · Bronze</small></button>
+            <button data-floor="gallery" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M4 14h16M6 14V9h12v5M9 9V5h6v4"/></svg>Gallery ⬆ <small>upstairs · 300 Gold seats</small></button>
+          </div>
           <div class="map-toolbar">
             <div class="legend" id="legend">
               <button class="lg active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>Whole hall</button>
+              <button class="lg" data-filter="vip"><i class="sw vip"></i>VIP <b>Rs.5,000</b></button>
               <button class="lg" data-filter="gold"><i class="sw gold"></i>Gold <b>Rs.3,500</b></button>
               <button class="lg" data-filter="silver"><i class="sw silver"></i>Silver <b>Rs.2,500</b></button>
-              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Gallery <b>Rs.1,500</b></button>
+              <button class="lg" data-filter="bronze"><i class="sw bronze"></i>Bronze <b>Rs.1,500</b></button>
               <span class="lg static"><i class="sw sel"></i>Your pick</span>
               <span class="lg static"><i class="sw taken"></i>Booked</span>
             </div>
           </div>
 
-          <p class="map-hint"><span class="h-out">Tap any part of the hall to zoom in</span><span class="h-zoomed">Tap a seat to pick it · drag or use the mini map to move around</span></p>
+          <p class="map-hint"><span class="h-out">Tap any part of the hall to zoom in</span><span class="h-zoomed">Tap a seat to pick it · drag the map or use the mini map to see more seats</span></p>
           <div class="map-wrap" id="mapWrap">
             <div class="zoom" aria-label="Zoom">
               <button class="icon-btn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
               <button class="icon-btn" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
               <button class="icon-btn" id="zoomReset" aria-label="Show the whole hall"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg></button>
             </div>
-            <svg id="hall" viewBox="0 0 1000 860" role="img" aria-label="Namal Hall seating plan"></svg>
+            <button class="floor-jump" id="floorJump" type="button"></button>
+            <svg id="hall" viewBox="0 0 1460 1040" role="img" aria-label="Namal Hall seating plan"></svg>
             <canvas class="minimap" id="minimap" aria-label="Mini map: tap to move around the hall"></canvas>
             <div class="tooltip" id="tooltip"></div>
           </div>
@@ -241,8 +263,9 @@
           <div class="best">
             <span>Quick pick:</span>
             <select id="bestTier">
-              <option value="gold">Gold</option>
-              <option value="silver" selected>Silver</option>
+              <option value="vip">VIP</option>
+              <option value="gold" selected>Gold</option>
+              <option value="silver">Silver</option>
               <option value="bronze">Bronze</option>
             </select>
             <div class="qty">
@@ -484,6 +507,7 @@
   <script src="js/vendor/qrcode.js"></script>
   <script src="js/vendor/jsQR.js"></script>
   <script src="js/snow.js"></script>
+  <script src="js/hall-plan.js"></script>
   <script src="js/db.js"></script>
   <script src="js/api.js"></script>
   <script src="js/payment.js"></script>

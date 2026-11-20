@@ -4,7 +4,7 @@
   const q = new URLSearchParams(location.search);
   const t = (q.get('t') || '').toUpperCase(), s = q.get('s') || '';
   const PIN_KEY = 'wv_door_pin';                  // remembered on door phones only
-  const TIERS = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
+  const TIERS = { vip: 'VIP', gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
   const ICONS = {
     ok: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     warn: '<svg viewBox="0 0 24 24"><path d="M12 7v6M12 17h.01"/></svg>',
@@ -21,8 +21,8 @@
     $('#title').innerHTML = `${title}<small>${sub}</small>`;
     if (ticket) {
       $('#body').hidden = false;
-      $('#row').textContent = ticket.row; $('#seat').textContent = ticket.num;
-      $('#tier').textContent = TIERS[ticket.tier] || ticket.tier; $('#tier').className = 'tier-' + ticket.tier;
+      $('#row').textContent = (/^G[A-Z]/.test(ticket.row) ? 'Gallery ' : '') + ticket.row; $('#seat').textContent = ticket.num;
+      $('#tier').textContent = (ticket.tier === 'vip' ? '♛ ' : '') + (TIERS[ticket.tier] || ticket.tier); $('#tier').className = 'tier-' + ticket.tier;
       $('#meta').innerHTML = `Ticket <b>${ticket.ticketId}</b><br>Booked by <b>${ticket.name}</b><br>Friday 18 December 2026 · from 4:30 PM · Namal Hall`;
     }
   }
@@ -30,9 +30,10 @@
   async function check() {
     if (location.protocol === 'file:') return show('bad', 'Not available offline', 'Open this from the live website.');
     if (q.has('demo') && t) {                               // made on a demo copy of the site
-      const m = /-([A-Z])(\d+)$/.exec(t);
+      const m = /-([A-Z]{1,2})(\d+)$/.exec(t);
+      const info = m && window.HALL_PLAN && window.HALL_PLAN.seatInfo(m[1] + m[2]);
       show('used', 'DEMO TICKET', 'Made in demo mode, so it isn\'t a real booking. Live tickets are checked here.',
-        m ? { row: m[1], num: m[2], tier: m[1] <= 'D' ? 'gold' : m[1] <= 'J' ? 'silver' : 'bronze', ticketId: t, name: '(demo)' } : null);
+        info ? { row: info.row, num: info.num, tier: info.tier, ticketId: t, name: '(demo)' } : null);
       return;
     }
     if (!t || !s) return show('bad', 'Not a valid ticket', 'This link is incomplete.');

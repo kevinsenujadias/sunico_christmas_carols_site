@@ -12,21 +12,13 @@
     dateISO: '2026-12-18T16:30:00+05:30',
     day: 'Friday', dayNum: 18, month: 'December', time: '4:30 PM'
   };
-  const TIERS = {
-    gold:   { label: 'Gold',   price: 3500, coin: 'assets/img/coin-gold.png' },
-    silver: { label: 'Silver', price: 2500, coin: 'assets/img/coin-silver.png' },
-    bronze: { label: 'Bronze', price: 1500, coin: 'assets/img/coin-bronze.png' }
-  };
+  // Seat plan + prices live in js/hall-plan.js (shared with the server).
+  const COINS = { vip: 'assets/img/coin-vip.png', gold: 'assets/img/coin-gold.png', silver: 'assets/img/coin-silver.png', bronze: 'assets/img/coin-bronze.png' };
+  const TIERS = Object.fromEntries(Object.entries(window.HALL_PLAN.TIERS).map(([k, t]) => [k, { ...t, coin: COINS[k] }]));
+  const TIER_KEYS = Object.keys(TIERS);           // vip, gold, silver, bronze
   const MAX_SEATS = 10;
   const HOLD_SECONDS = 10 * 60;
-  const DEMO_TAKEN_RATIO = 0.14;   // pretend some seats are already sold
-
-  // Namal Hall plan: 300 seats. blocks = seats in [left, centre, right] sections.
-  const ROWS = [
-    ...'ABCD'.split('').map(r => ({ row: r, tier: 'gold',   zone: 'floor',   blocks: [6, 8, 6] })),
-    ...'EFGHIJ'.split('').map(r => ({ row: r, tier: 'silver', zone: 'floor',   blocks: [6, 10, 6] })),
-    ...'KLMN'.split('').map(r => ({ row: r, tier: 'bronze', zone: 'gallery', blocks: [6, 10, 6] }))
-  ];
+  const DEMO_TAKEN_RATIO = 0.14;   // demo only: pretend some seats are already sold
 
   /* ---------------- helpers ---------------- */
   const $ = (s, el = document) => el.querySelector(s);
@@ -65,128 +57,124 @@
      HALL PLAN (SVG)
      ========================================================= */
   const hall = $('#hall');
-  const CX = 500, CY = -1100;              // centre of the curved rows (far behind the stage)
-  const FLOOR_R0 = 1300, ROW_GAP = 50, GALLERY_GAP = 110;
-  const SEAT_STEP = 35, AISLE = 1.7;
-  const FLOOR_ROWS = ROWS.filter(r => r.zone === 'floor').length;
-  const GAL_ROWS = ROWS.length - FLOOR_ROWS;
-  const radiusOf = (zone, i) => zone === 'floor'
-    ? FLOOR_R0 + i * ROW_GAP
-    : FLOOR_R0 + (FLOOR_ROWS - 1) * ROW_GAP + GALLERY_GAP + i * ROW_GAP;
-  const HALL_H = Math.round(CY + radiusOf('gallery', GAL_ROWS - 1) + 52);
+  const PLAN = window.HALL_PLAN;
+  let floor = 'ground';                     // which floor the map is showing
+  const floorLayers = {};
 
   function buildHall() {
     hall.innerHTML = '';
-    hall.setAttribute('viewBox', `0 0 1000 ${HALL_H}`);
-    mapWrap.style.setProperty('--hall-ar', `1000 / ${HALL_H}`);
     const defs = svgEl('defs', {}, hall);
     defs.innerHTML = `
       <radialGradient id="stageGlow" cx="50%" cy="0%" r="70%">
-        <stop offset="0%" stop-color="#f6dc93" stop-opacity=".55"/>
-        <stop offset="100%" stop-color="#f6dc93" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#f6dc93" stop-opacity=".45"/><stop offset="100%" stop-color="#f6dc93" stop-opacity="0"/>
       </radialGradient>
       <linearGradient id="stageFill" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#7c0a1c"/><stop offset="100%" stop-color="#3a0610"/>
-      </linearGradient>
-      <linearGradient id="screenFill" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="#fff" stop-opacity="0"/><stop offset="20%" stop-color="#fff" stop-opacity=".95"/>
-        <stop offset="80%" stop-color="#fff" stop-opacity=".95"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-      </linearGradient>
-      <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>`;
-
-    // Hall walls
-    svgEl('path', {
-      d: `M40 26 Q40 8 60 8 L940 8 Q960 8 960 26 L994 ${HALL_H * .62} L994 ${HALL_H - 10} Q994 ${HALL_H - 4} 988 ${HALL_H - 4} L12 ${HALL_H - 4} Q6 ${HALL_H - 4} 6 ${HALL_H - 10} L6 ${HALL_H * .62} Z`,
-      fill: 'rgba(255,255,255,.015)', stroke: 'rgba(255,255,255,.08)', 'stroke-width': 1.5
-    }, hall);
-
-    // Screen + stage
-    svgEl('ellipse', { cx: 500, cy: 40, rx: 360, ry: 120, fill: 'url(#stageGlow)', class: 'stage-glow' }, hall);
-    svgEl('path', { d: 'M270 24 Q500 12 730 24', stroke: '#fff', 'stroke-width': 8, filter: 'url(#blur8)', opacity: .6 }, hall);
-    svgEl('path', { d: 'M270 24 Q500 12 730 24', stroke: 'url(#screenFill)', 'stroke-width': 4 }, hall);
-    const sl = svgEl('text', { x: 500, y: 44, 'text-anchor': 'middle', class: 'stage-sub' }, hall); sl.textContent = 'SCREEN';
-    svgEl('path', {
-      d: 'M205 54 L795 54 L765 132 Q500 164 235 132 Z',
-      fill: 'url(#stageFill)', stroke: 'rgba(246,220,147,.55)', 'stroke-width': 1.5
-    }, hall);
-    const st = svgEl('text', { x: 505, y: 110, 'text-anchor': 'middle', class: 'stage-label' }, hall); st.textContent = 'STAGE';
-
-    // Gallery band
-    const gR1 = radiusOf('gallery', 0) - 40, gR2 = radiusOf('gallery', GAL_ROWS - 1) + 30;
-    const ga = 14.6 * SEAT_STEP / gR1;
-    const p = (R, a) => `${(CX + R * Math.sin(a)).toFixed(1)} ${(CY + R * Math.cos(a)).toFixed(1)}`;
-    svgEl('path', {
-      d: `M${p(gR1, -ga)} A${gR1} ${gR1} 0 0 0 ${p(gR1, ga)} L${p(gR2, ga)} A${gR2} ${gR2} 0 0 1 ${p(gR2, -ga)} Z`,
-      fill: 'rgba(196,127,78,.05)', stroke: 'rgba(196,127,78,.25)', 'stroke-width': 1
-    }, hall);
-    svgEl('path', { d: `M${p(gR1, -ga)} A${gR1} ${gR1} 0 0 0 ${p(gR1, ga)}`, stroke: 'rgba(196,127,78,.6)', 'stroke-width': 3, 'stroke-dasharray': '2 6' }, hall);
-    const gl = svgEl('text', { x: 500, y: CY + gR1 - 14, 'text-anchor': 'middle', class: 'zone-label' }, hall);
-    gl.textContent = 'GALLERY · UPPER LEVEL';
-
-    // Entrances (between the floor and the gallery)
-    const ey = Math.round(CY + (radiusOf('floor', FLOOR_ROWS - 1) + gR1) / 2 - 20);
-    [[22, 'start'], [978, 'end']].forEach(([x, a]) => {
-      const t = svgEl('text', { x, y: ey + 4, 'text-anchor': a, class: 'zone-label', style: 'font-size:10px' }, hall);
-      t.textContent = 'ENTRANCE';
-      const wx = a === 'start' ? 9 : 991;
-      svgEl('path', { d: `M${wx} ${ey - 22} L${wx} ${ey + 22}`, stroke: 'rgba(231,189,90,.8)', 'stroke-width': 5 }, hall);
-    });
-
-    // Seats
+      </linearGradient>`;
     const rand = seeded(20261218);
     const booked = new Set(Backend.live ? liveTaken : bookings.flatMap(b => b.tickets.map(t => t.seat)));
-    const gSeats = svgEl('g', { id: 'seatGroup' }, hall);
-    let floorIdx = 0, galIdx = 0;
-    const tierSpans = {};
+    const seatLayers = {};
 
-    ROWS.forEach(rowDef => {
-      const R = rowDef.zone === 'floor' ? radiusOf('floor', floorIdx++) : radiusOf('gallery', galIdx++);
-
-      // unit positions along the arc, with aisles between blocks
-      const units = []; let u = 0;
-      rowDef.blocks.forEach((n, b) => {
-        for (let i = 0; i < n; i++) { units.push({ u, block: b }); u++; }
-        u += AISLE;           // aisle gap
+    Object.entries(PLAN.FLOORS).forEach(([fid, F]) => {
+      const layer = svgEl('g', { class: 'floor-layer', 'data-floor': fid }, hall);
+      floorLayers[fid] = layer;
+      svgEl('rect', { x: 6, y: 6, width: F.w - 12, height: F.h - 12, rx: 26, class: 'hall-wall' }, layer);
+      const st = F.stage;
+      if (st.kind === 'rail') {
+        svgEl('rect', { x: st.x, y: st.y, width: st.w, height: st.h, rx: 14, class: 'rail' }, layer);
+      } else {
+        svgEl('ellipse', { cx: st.x + st.w / 2, cy: st.y, rx: st.w * .62, ry: st.h * 1.4, fill: 'url(#stageGlow)', class: 'stage-glow' }, layer);
+        svgEl('rect', { x: st.x, y: st.y, width: st.w, height: st.h, rx: 18, fill: 'url(#stageFill)', stroke: 'rgba(246,220,147,.55)', 'stroke-width': 1.5 }, layer);
+      }
+      const sl = svgEl('text', { x: st.x + st.w / 2, y: st.y + st.h / 2 + (st.kind === 'rail' ? 5 : 9), 'text-anchor': 'middle', class: st.kind === 'rail' ? 'rail-label' : 'stage-label' }, layer);
+      sl.textContent = st.label;
+      F.boxes.forEach(b => {
+        svgEl('rect', { x: b.x, y: b.y, width: b.w, height: b.h, rx: 14, class: `box ${b.kind}` }, layer);
+        const lines = b.label.split(' & ').length > 1 ? [b.label.split(' & ')[0] + ' &', b.label.split(' & ')[1]] : [b.label];
+        lines.forEach((ln, i) => {
+          const t = svgEl('text', { x: b.x + b.w / 2, y: b.y + b.h / 2 + 5 + (i - (lines.length - 1) / 2) * 18, 'text-anchor': 'middle', class: 'box-label' }, layer);
+          t.textContent = ln;
+        });
       });
-      const last = units[units.length - 1].u, mid = last / 2;
-
-      units.forEach((pt, i) => {
-        const theta = (pt.u - mid) * SEAT_STEP / R;
-        const x = CX + R * Math.sin(theta), y = CY + R * Math.cos(theta);
-        const num = i + 1;
-        const id = rowDef.row + num;
-        const taken = booked.has(id) || (!Backend.live && rand() < DEMO_TAKEN_RATIO);
-        const seat = { id, row: rowDef.row, num, tier: rowDef.tier, block: pt.block, u: pt.u, mid, taken, x, y, el: null };
-        const g = svgEl('g', {
-          class: `seat ${seat.tier}${taken ? ' taken' : ''}`,
-          transform: `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(-theta * 180 / Math.PI).toFixed(2)})`,
-          'data-id': id, tabindex: taken ? -1 : 0, role: 'button',
-          'aria-label': `Row ${seat.row} seat ${num}, ${TIERS[seat.tier].label}, ${rs(TIERS[seat.tier].price)}${taken ? ', taken' : ''}`
-        }, gSeats);
-        // invisible, larger tap area so seats are easy to hit on phones
-        svgEl('rect', { x: -17.5, y: -18, width: 35, height: 38, fill: 'transparent', class: 's-hit' }, g);
-        // inner group so CSS scale doesn't fight the transform attribute
-        const inner = svgEl('g', { class: 'seat-in' }, g);
-        svgEl('rect', { x: -15, y: 9, width: 30, height: 7, rx: 2.5, class: 's-back' }, inner);
-        svgEl('rect', { x: -15, y: -14, width: 30, height: 25, rx: 7, class: 's-body' }, inner);
-        svgEl('path', { d: 'M-6.5 -8 L6.5 5 M6.5 -8 L-6.5 5', class: 's-x' }, inner);
-        svgEl('path', { d: 'M-7.5 -1.5 L-2.5 3.5 L7.5 -7', class: 's-check' }, inner);
-        const n = svgEl('text', { x: 0, y: 3.5, 'text-anchor': 'middle', class: 's-num' }, inner);
-        n.textContent = num;
-        seat.el = g;
-        seats.set(id, seat);
-
-        if (i === 0 || i === units.length - 1) {
-          const off = (i === 0 ? -1.2 : 1.2) * SEAT_STEP / R;
-          const lx = CX + R * Math.sin(theta + off), ly = CY + R * Math.cos(theta + off);
-          const t = svgEl('text', { x: lx.toFixed(1), y: (ly + 5).toFixed(1), 'text-anchor': 'middle', class: 'row-lbl' }, hall);
-          t.textContent = rowDef.row;
-        }
+      F.notes.forEach(n => {
+        const t = svgEl('text', { x: n.x, y: n.y, 'text-anchor': 'middle', class: `tier-note ${n.tier}` }, layer);
+        t.textContent = n.text;
       });
-      const ts = tierSpans[rowDef.tier] || (tierSpans[rowDef.tier] = { min: Infinity, max: -Infinity });
-      ts.min = Math.min(ts.min, CY + R); ts.max = Math.max(ts.max, CY + R);
+      seatLayers[fid] = svgEl('g', { class: 'seat-layer' }, layer);
     });
-    hall.appendChild(gSeats);   // seats on top of labels
+
+    // row letters on the outside of the left-most / right-most blocks
+    PLAN.BLOCKS.forEach(b => {
+      if (!b.side) return;
+      [...b.rows].forEach(r => {
+        const row = (b.prefix || '') + r;
+        const edge = PLAN.seats.find(p => p.block === b.id && p.row === row && (b.side === 'left' ? p.num === b.first : p.num === b.first + b.seats - 1));
+        const t = svgEl('text', { x: edge.x + (b.side === 'left' ? -1 : 1) * PLAN.SX * 1.05, y: edge.y + 5, 'text-anchor': 'middle', class: 'row-lbl' }, floorLayers[b.floor]);
+        t.textContent = row;
+      });
+    });
+
+    // more row letters so you always know your row when zoomed in:
+    // ground floor: in the centre aisle · gallery: beside every block
+    const rowLetter = (floor, x, y, txt, cls = 'row-lbl') => { const t = svgEl('text', { x, y: y + 6, 'text-anchor': 'middle', class: cls }, floorLayers[floor]); t.textContent = txt; };
+    const gL = PLAN.BLOCKS.find(b => b.id === 'gL'), gR = PLAN.BLOCKS.find(b => b.id === 'gR');
+    const aisleX = (gL.x + (gL.seats - 1) * PLAN.SX + gR.x) / 2;
+    PLAN.seats.filter(p => p.block === 'gL' && p.num === 1).forEach(p => rowLetter('ground', aisleX, p.y, p.row, 'row-lbl aisle'));
+    PLAN.BLOCKS.filter(b => b.floor === 'gallery' && !b.side).forEach(b =>
+      PLAN.seats.filter(p => p.block === b.id && p.num === b.first).forEach(p => rowLetter('gallery', p.x - PLAN.SX * 1.05, p.y, p.row)));
+
+    PLAN.seats.forEach(p => {
+      const taken = booked.has(p.id) || (!Backend.live && rand() < DEMO_TAKEN_RATIO);
+      const seat = { ...p, taken, el: null };
+      const g = svgEl('g', {
+        class: `seat ${p.tier}${taken ? ' taken' : ''}`,
+        transform: `translate(${p.x} ${p.y})`,
+        'data-id': p.id, tabindex: taken ? -1 : 0, role: 'button',
+        'aria-label': `Row ${p.row} seat ${p.num}, ${TIERS[p.tier].label}, ${rs(TIERS[p.tier].price)}${taken ? ', taken' : ''}`
+      }, seatLayers[p.floor]);
+      svgEl('rect', { x: -15, y: -16, width: 30, height: 32, fill: 'transparent', class: 's-hit' }, g);      // whole cell is clickable
+      const inner = svgEl('g', { class: 'seat-in' }, g);                                                    // CSS scales this
+      svgEl('rect', { x: -13, y: -11, width: 26, height: 26, rx: 6, class: 's-back' }, inner);             // soft shadow
+      svgEl('rect', { x: -13, y: -13, width: 26, height: 26, rx: 6, class: 's-body' }, inner);             // big square seat
+      svgEl('path', { d: 'M-6 -6 L6 6 M6 -6 L-6 6', class: 's-x' }, inner);
+      svgEl('path', { d: 'M-7 0 L-2.5 4.5 L7 -5', class: 's-check' }, inner);
+      const n = svgEl('text', { x: 0, y: 4.6, 'text-anchor': 'middle', class: 's-num' }, inner);
+      n.textContent = p.num;
+      seat.el = g;
+      seats.set(p.id, seat);
+    });
+  }
+
+  /** show one floor of the hall */
+  function setFloor(f, { instant = false, keepView = false } = {}) {
+    floor = f;
+    Object.entries(floorLayers).forEach(([k, g]) => { g.style.display = k === f ? '' : 'none'; });
+    BASE.w = PLAN.FLOORS[f].w; BASE.h = PLAN.FLOORS[f].h;
+    mapWrap.style.setProperty('--hall-ar', `${BASE.w} / ${BASE.h}`);
+    if (mini) mini.style.aspectRatio = `${BASE.w} / ${BASE.h}`;
+    $$('#floorTabs [data-floor]').forEach(b => b.classList.toggle('on', b.dataset.floor === f));
+    const fj = $('#floorJump');
+    if (fj) {
+      fj.classList.toggle('down', f === 'gallery');
+      fj.innerHTML = f === 'ground'
+        ? `<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span><b>Gallery upstairs</b><small>${galleryLeft()} Gold seats</small></span>`
+        : `<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg><span><b>Ground floor</b><small>VIP · Gold · Silver · Bronze</small></span>`;
+    }
+    if (keepView) return;
+    hall.setAttribute('viewBox', `0 0 ${BASE.w} ${BASE.h}`);
+    openView(instant);
+  }
+  const galleryLeft = () => [...seats.values()].filter(s => s.floor === 'gallery' && !s.taken).length;
+
+  /** readable start: zoomed so seats are big, at the front rows, centred on the middle aisle */
+  function openView(instant) {
+    if (!mapWrap.clientWidth) return;
+    view.z = tapZoom();
+    view.cx = floor === 'gallery' ? 0 : BASE.w / 2;   // gallery: start at the first full block (clamped to the left edge)
+    const stg = PLAN.FLOORS[floor].stage;
+    view.cy = stg.y + stg.h * .4 + viewSize().h / 2;
+    $$('#legend [data-filter]').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    instant ? applyView() : animateView();
   }
 
   /* ---------------- seat interaction ---------------- */
@@ -218,7 +206,7 @@
     const t = TIERS[seat.tier];
     tip.innerHTML = seat.taken
       ? `<b>Row ${seat.row} · Seat ${seat.num}</b><span style="color:#ff6b81">Booked</span>`
-      : `<b>Row ${seat.row} · Seat ${seat.num}</b><span class="t-${seat.tier}">${t.label}</span> · ${rs(t.price)}`;
+      : `<b>${seat.floor === 'gallery' ? 'Gallery · ' : ''}Row ${seat.row} · Seat ${seat.num}</b><span class="t-${seat.tier}">${t.label}</span> · ${rs(t.price)}`;
     tip.style.left = (r.left + r.width / 2 - w.left + mapWrap.scrollLeft) + 'px';
     tip.style.top = (r.top - w.top + mapWrap.scrollTop) + 'px';
     tip.classList.add('show');
@@ -226,10 +214,10 @@
   const hideTip = () => tip.classList.remove('show');
 
   /* zoom & pan via viewBox */
-  const BASE = { w: 1000, h: HALL_H };
-  const view = { z: 1, cx: 500, cy: HALL_H / 2 };
+  const BASE = { w: PLAN.FLOORS.ground.w, h: PLAN.FLOORS.ground.h };   // changes with the floor
+  const view = { z: 1, cx: BASE.w / 2, cy: BASE.h / 2 };
   // On phones the map sits in a tall frame, so the visible area follows the frame's shape.
-  const fitMode = () => matchMedia('(max-width: 700px)').matches;
+  const fitMode = () => true;   // the map is a fixed window on every screen; we zoom/pan inside it
   function viewAR() {
     if (!fitMode()) return BASE.h / BASE.w;
     const r = mapWrap.getBoundingClientRect();
@@ -243,11 +231,11 @@
     view.cy = clampC(view.cy, h, BASE.h);
     hall.setAttribute('viewBox', `${(view.cx - w / 2).toFixed(1)} ${(view.cy - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
     mapWrap.classList.toggle('pannable', view.z > 1);
-    drawMini();
     mapWrap.classList.toggle('zoomed', view.z > 1.05);
+    drawMini();
   }
   function zoomTo(z, cx, cy) {
-    view.z = Math.min(3.2, Math.max(1, z));
+    view.z = Math.min(6, Math.max(1, z));
     mapWrap.classList.toggle('zoomed', view.z > 1.05);   // on phones the frame grows when zoomed
     if (cx != null) { view.cx = cx; view.cy = cy; }
     animateView();
@@ -277,13 +265,16 @@
     return pt.matrixTransform(hall.getScreenCTM().inverse());
   }
   // on small screens seats are tiny when the whole hall is shown, so a tap zooms in first
-  const smallScreen = () => hall.getBoundingClientRect().width < 640;
-  // zoom where one seat is ~30px wide on screen (about 11 seats across a phone)
-  const tapZoom = () => Math.min(3.2, Math.max(2.2, BASE.w / Math.max(300, mapWrap.clientWidth)));
+  // seat size on screen right now (px)
+  const seatPx = () => PLAN.SX * hall.getBoundingClientRect().width / hall.viewBox.baseVal.width;
+  const smallScreen = () => seatPx() < 24;      // too small to tap reliably: first tap zooms in
+  // zoom where each seat square is ~36px on screen (Regal-style, easy to read and tap)
+  const SEAT_PX = 38;
+  const tapZoom = () => Math.min(6, Math.max(1, SEAT_PX * BASE.w / (PLAN.SX * Math.max(280, mapWrap.clientWidth))));
 
   /* mini map (phones): where you are in the hall; tap/drag it to jump */
   const mini = document.getElementById('minimap');
-  const MINI_COL = { gold: '#e7bd5a', silver: '#cdd6e2', bronze: '#c47f4e' };
+  const MINI_COL = { vip: '#a970ff', gold: '#e7bd5a', silver: '#cdd6e2', bronze: '#c47f4e' };
   function drawMini() {
     if (!mini || !fitMode() || !mapWrap.classList.contains('zoomed')) return;
     const dpr = Math.min(2, devicePixelRatio || 1), cw = mini.clientWidth, ch = mini.clientHeight;
@@ -292,10 +283,12 @@
     const c = mini.getContext('2d'), k = cw / BASE.w;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, cw, ch);
-    c.fillStyle = 'rgba(246,220,147,.55)'; c.fillRect(cw * .22, 1, cw * .56, 4);           // stage
+    const stg = PLAN.FLOORS[floor].stage;
+    c.fillStyle = 'rgba(246,220,147,.55)'; c.fillRect(stg.x * k, stg.y * k, stg.w * k, Math.max(3, stg.h * k));   // stage
     seats.forEach(st => {
+      if (st.floor !== floor) return;
       c.fillStyle = picked.has(st.id) ? '#34d399' : st.taken ? '#e8203f' : MINI_COL[st.tier];
-      c.fillRect(st.x * k - 1.3, st.y * k - 1.1, 2.6, 2.2);
+      c.fillRect(st.x * k - 1, st.y * k - 1, 2, 2);
     });
     const vb = hall.viewBox.baseVal;
     c.strokeStyle = '#fff'; c.lineWidth = 1.5;
@@ -303,7 +296,7 @@
   }
   function bindMini() {
     if (!mini) return;
-    mini.style.aspectRatio = `1000 / ${HALL_H}`;
+    mini.style.aspectRatio = `${BASE.w} / ${BASE.h}`;
     let down = false;
     const move = e => {
       const r = mini.getBoundingClientRect();
@@ -319,13 +312,9 @@
   /* phones open the seat map already zoomed in at the front of the hall, seats ~30px */
   let phoneStarted = false;
   function phoneStart() {
-    if (!fitMode() || phoneStarted || !mapWrap.clientWidth) return;
+    if (phoneStarted || !mapWrap.clientWidth) return;
     phoneStarted = true;
-    mapWrap.classList.add('zoomed');
-    view.z = tapZoom(); view.cx = BASE.w / 2;
-    view.cy = viewSize().h / 2;                     // top of the hall: stage + front rows
-    $$('#legend [data-filter]').forEach(b => b.classList.remove('active'));
-    applyView();
+    openView(true);
   }
 
   function bindMap() {
@@ -352,7 +341,7 @@
         const [a, b] = [...pts.values()];
         const r = hall.getBoundingClientRect();
         const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-        view.z = Math.min(3.5, Math.max(1, pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d));
+        view.z = Math.min(6, Math.max(1, pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d));
         const { w, h } = viewSize();
         view.cx = pinch.anchor.x - ((mx - r.left) / r.width - .5) * w;
         view.cy = pinch.anchor.y - ((my - r.top) / r.height - .5) * h;
@@ -377,7 +366,7 @@
 
     hall.addEventListener('click', e => {
       if (moved) { moved = false; return; }
-      if (smallScreen() && view.z < 1.6) {          // first tap: zoom into that part of the hall
+      if (smallScreen()) {                          // seats too small: first tap zooms into that part of the hall
         const p = toHall(e.clientX, e.clientY);
         zoomTo(tapZoom(), p.x, p.y);
         hideTip();
@@ -404,47 +393,52 @@
 
     $('#zoomIn').onclick = () => zoomTo(view.z * 1.35);
     $('#zoomOut').onclick = () => zoomTo(view.z / 1.35);
-    $('#zoomReset').onclick = () => zoomTo(1, 500, HALL_H / 2);
+    $('#zoomReset').onclick = () => zoomTo(1, BASE.w / 2, BASE.h / 2);
+    $$('#floorTabs [data-floor]').forEach(b => b.addEventListener('click', () => { setFilter(null, { stay: true }); setFloor(b.dataset.floor); }));
 
     // legend filters
     $$('#legend [data-filter]').forEach(b => b.addEventListener('click', () => {
       const f = b.dataset.filter;
       setFilter(f === 'all' || b.classList.contains('active') ? null : f);
     }));
+    $('#floorJump').addEventListener('click', () => { setFilter(null, { stay: true }); setFloor(floor === 'ground' ? 'gallery' : 'ground'); });
     addEventListener('resize', () => { clearTimeout(bindMap._r); bindMap._r = setTimeout(applyView, 120); });
   }
 
-  function setFilter(tier) {
+  function setFilter(tier, { stay = false } = {}) {
     $$('#legend [data-filter]').forEach(b => b.classList.toggle('active', b.dataset.filter === (tier || 'all')));
     hall.classList.toggle('filtering', !!tier);
     seats.forEach(s => s.el.classList.toggle('hl', s.tier === tier));
+    if (stay) return;
     if (tier) {
-      const ys = [...seats.values()].filter(s => s.tier === tier).map(s => s.y);
-      const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-      if (fitMode()) zoomTo(tapZoom(), 500, cy);   // phones: zoom right in so seats are easy to tap
-      else zoomTo(tier === 'silver' ? 1.35 : 1.6, 500, cy);
+      // jump to the floor that has this tier (Gold is on both: stay if already there)
+      const here = [...seats.values()].some(s => s.tier === tier && s.floor === floor);
+      if (!here) setFloor([...seats.values()].find(s => s.tier === tier).floor, { instant: true });
+      const list = [...seats.values()].filter(s => s.tier === tier && s.floor === floor);
+      const xs = list.map(s => s.x), ys = list.map(s => s.y);
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+      view.z = tapZoom();                                  // big seats, starting at the tier's front row
+      zoomTo(view.z, cx, Math.min(...ys) - 50 + viewSize().h / 2);
       $('#bestTier').value = tier;
-    } else zoomTo(1, 500, HALL_H / 2);
+    } else zoomTo(1, BASE.w / 2, BASE.h / 2);
   }
 
-  /* best available seats together */
+  /* best available seats together: front rows first, then closest to the middle of the hall */
   function bestSeats(tier, qty) {
     let best = null;
-    const byRow = {};
-    seats.forEach(s => { if (s.tier === tier) (byRow[s.row] ||= []).push(s); });
-    Object.keys(byRow).sort().forEach((row, ri) => {
-      const list = byRow[row];
-      // split by block, look for runs of free seats
-      [0, 1, 2].forEach(b => {
-        const blk = list.filter(s => s.block === b);
-        for (let i = 0; i + qty <= blk.length; i++) {
-          const run = blk.slice(i, i + qty);
-          if (run.some(s => s.taken || picked.has(s.id))) continue;
-          const centre = (run[0].u + run[run.length - 1].u) / 2;
-          const score = ri * 4 + Math.abs(centre - run[0].mid) * 0.9 + (b === 1 ? 0 : 1.5);
-          if (!best || score < best.score) best = { score, run };
-        }
-      });
+    const groups = {};
+    seats.forEach(s => { if (s.tier === tier) (groups[s.block + '|' + s.row] ||= []).push(s); });
+    Object.values(groups).forEach(list => {
+      list.sort((a, b) => a.num - b.num);
+      const F = PLAN.FLOORS[list[0].floor], mid = F.w / 2;
+      for (let i = 0; i + qty <= list.length; i++) {
+        const run = list.slice(i, i + qty);
+        if (run.some(s => s.taken || picked.has(s.id))) continue;
+        const cx = (run[0].x + run[run.length - 1].x) / 2;
+        // distance from stage dominates; ground beats gallery for the same tier
+        const score = (run[0].y - F.stage.y) / PLAN.SY * 4 + Math.abs(cx - mid) / PLAN.SX * 0.35 + (run[0].floor === 'gallery' ? 30 : 0);
+        if (!best || score < best.score) best = { score, run };
+      }
     });
     return best ? best.run : null;
   }
@@ -467,7 +461,7 @@
   /* summary */
   let shownTotal = 0;
   function totals() {
-    const by = { gold: [], silver: [], bronze: [] };
+    const by = Object.fromEntries(TIER_KEYS.map(k => [k, []]));
     picked.forEach(s => by[s.tier].push(s));
     const total = Object.entries(by).reduce((a, [t, l]) => a + l.length * TIERS[t].price, 0);
     return { by, total };
@@ -502,7 +496,7 @@
 
   /* seats-left counters on tier cards */
   function updateAvailability() {
-    const left = { gold: 0, silver: 0, bronze: 0 };
+    const left = Object.fromEntries(TIER_KEYS.map(k => [k, 0]));
     seats.forEach(s => { if (!s.taken) left[s.tier]++; });
     $$('[data-left]').forEach(el => { el.textContent = left[el.dataset.left]; });
   }
@@ -657,21 +651,23 @@
 
   function ticketHTML(b, t) {
     const tier = TIERS[t.tier];
+    const gallery = /^G[A-Z]/.test(t.seat);
     const qrText = t.verifyUrl                              // live: signed link to the official check page
       || (location.protocol.startsWith('http') ? `${location.origin}${location.pathname.replace(/[^/]*$/, '')}verify.html?t=${encodeURIComponent(t.ticketId)}&demo=1` : t.ticketId);
     return `
     <article class="ticket tk ${t.tier}${t.checkedInAt ? ' used' : ''}" data-no="${t.ticketId}">
       <div class="t-part t-stub tk-stub">
+        ${t.tier === 'vip' ? '<div class="tk-vip-band"><svg viewBox="0 0 24 16" aria-hidden="true"><path d="M2 14 L4 4 L9 9 L12 2 L15 9 L20 4 L22 14 Z"/></svg>VIP · FRONT ROWS</div>' : ''}
         <div class="tk-tier"><img src="${tier.coin}" alt="" />${tier.label} · ${rs(tier.price)}</div>
         <div class="tk-mid">
-          <div class="tk-seat"><small>Row · Seat</small><b>${t.seat}</b><span>Row ${t.row} · Seat ${t.num}</span></div>
+          <div class="tk-seat"><small>Row · Seat</small><b>${t.seat}</b><span>${gallery ? 'Gallery · ' : ''}Row ${t.row} · Seat ${t.num}</span></div>
           <div class="tk-qr" title="Scan to verify">${qrSVG(qrText)}</div>
         </div>
         <div class="tk-who"><b>${esc(fullName(b))}</b><span>${t.ticketId}</span></div>
       </div>
       <div class="t-part t-main tk-main">
         <img class="tk-face" src="assets/img/ticket-face.jpg" alt="Winter Vespers 2026 · Friday 18 December 2026 · from 4:30 PM · Namal Hall" />
-        <div class="tk-admit-one">ADMIT ONE · ${t.seat}</div>
+        <div class="tk-admit-one">${t.tier === 'vip' ? 'VIP · ' : ''}ADMIT ONE · ${t.seat}</div>
       </div>
       <div class="t-perf"></div>
       <div class="t-scissor"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg></div>
@@ -777,14 +773,14 @@
     const office = valid.filter(b => b.status === 'cash').reduce((a, b) => a + b.amount, 0);
     const inside = tickets.filter(t => t.checkedInAt).length;
     const issues = staffBookings.filter(b => ['paid_conflict', 'chargedback'].includes(b.status)).length;
-    const left = { gold: 0, silver: 0, bronze: 0 };
+    const left = Object.fromEntries(TIER_KEYS.map(k => [k, 0]));
     seats.forEach(s => { if (!s.taken) left[s.tier]++; });
     $('#stats').innerHTML = `
       <div><small>Tickets sold</small><b>${tickets.length}</b>${issues ? `<small class="warn-txt">${issues} need attention</small>` : ''}</div>
       <div><small>Online (PayHere)</small><b>${rs(online)}</b>${Backend.config ? `<small>limit ${rs(Backend.config.monthlyCap)} / month</small>` : ''}</div>
       <div><small>At the office</small><b>${rs(office)}</b></div>
       <div><small>Checked in</small><b>${inside} <em>/ ${tickets.length}</em></b></div>
-      <div><small>Seats left</small><b class="left"><span class="g">${left.gold}<i>Gold</i></span><span class="s">${left.silver}<i>Silver</i></span><span class="b">${left.bronze}<i>Bronze</i></span></b></div>`;
+      <div><small>Seats left</small><b class="left"><span class="v">${left.vip}<i>VIP</i></span><span class="g">${left.gold}<i>Gold</i></span><span class="s">${left.silver}<i>Silver</i></span><span class="b">${left.bronze}<i>Bronze</i></span></b></div>`;
 
     const q = adminQuery.toLowerCase().replace(/\s+/g, '');
     const rows = staffBookings.filter(b => !q || [b.ref, fullName(b), b.customer.phone, b.customer.email, b.customer.student, b.paymentId, ...b.tickets.map(t => t.seat)]
@@ -1226,6 +1222,7 @@
     } else bookings = await DB.all();
     applyModeUI();
     buildHall();
+    setFloor('ground', { instant: true });
     bindAdmin();
     bindMap();
     updateSummary();
@@ -1272,10 +1269,10 @@
       if (picked.size + qty > MAX_SEATS) { toast(`That would go over ${MAX_SEATS} seats. Remove some first.`); return; }
       const run = bestSeats(tier, qty);
       if (!run) { toast(`No ${qty} ${TIERS[tier].label} seats left side by side. Try fewer seats or another tier.`); return; }
+      if (run[0].floor !== floor) setFloor(run[0].floor, { instant: true });
       run.forEach((s, i) => setTimeout(() => toggleSeat(s.id), i * 90));
-      const cy = run[0].y;
-      zoomTo(1.7, run.reduce((a, s) => a + s.x, 0) / run.length, cy);
-      toast(`Picked ${run.map(s => s.id).join(', ')} — ${TIERS[tier].label}, side by side.`);
+      zoomTo(Math.max(view.z, fitMode() ? tapZoom() : 2), run.reduce((a, s) => a + s.x, 0) / run.length, run[0].y);
+      toast(`Picked ${run.map(s => s.id).join(', ')} — ${TIERS[tier].label}${run[0].floor === 'gallery' ? ' (Gallery)' : ''}, side by side.`);
     };
 
     $('#snowToggle').onclick = () => { const on = Snow.toggle(); $('#snowToggle').classList.toggle('off', !on); };
