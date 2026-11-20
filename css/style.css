@@ -1181,3 +1181,23 @@ button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,11
   .ov-left .lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,112,255,.2)}
 }
 @media (min-width:1025px){.ov-left .lg{justify-content:flex-start;text-align:left}}
+
+/* ===== side panel v4 (computers): Quick pick → Floor → Colours → Your seats, all compact ===== */
+@media (min-width:1025px){
+  .seat-side{gap:.5rem}
+  .seat-side .side-box{padding:.7rem .8rem}
+  .seat-side .side-box h4{margin-bottom:.45rem;font-size:.68rem}
+  .seat-side .floor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+  .seat-side .floor-tabs button{min-height:0;padding:.55rem .65rem;justify-content:center}
+  .seat-side .floor-tabs button .fl-name{font-size:1rem;white-space:nowrap}
+  .seat-side .floor-tabs button small{font-size:.64rem}
+  .seat-side .legend{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem}
+  .seat-side .lg-all{display:none}
+  .seat-side .lg,.seat-side .lg.static{padding:.35rem .45rem;font-size:.76rem;gap:.4rem;border-radius:10px;justify-content:flex-start;text-align:left;min-width:0}
+  .seat-side .lg .sw,.seat-side .lg.static .sw{width:15px;height:15px;border-radius:4px}
+  .seat-side .lg.tier span{display:flex;flex-direction:column;line-height:1.1}
+  .seat-side .lg.tier b{font-size:.68rem;margin:0;color:var(--muted)}
+  .seat-side .lg.active{border-color:var(--gold);background:rgba(231,189,90,.14)}
+  .seat-side .lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,112,255,.2)}
+  .seat-side .summary .total-row strong{font-size:1.5rem}
+}

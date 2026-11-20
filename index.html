@@ -249,13 +249,6 @@
         </div>
 
         <aside class="seat-side">
-          <section class="side-box floor-box">
-            <h4>Floor</h4>
-          <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
-            <button class="on fl-ground" data-floor="ground" role="tab"><span class="fl-name">Ground floor</span><small>VIP · Gold · Silver · Bronze</small></button>
-            <button class="fl-gallery" data-floor="gallery" role="tab"><span class="fl-name">Gallery ⬆</span><small>Upstairs · 300 Gold seats</small></button>
-          </div>
-          </section>
           <section class="side-box best-box">
             <h4>Quick pick</h4>
           <div class="best">
@@ -271,8 +264,15 @@
             <button class="btn btn-outline btn-sm" id="bestBtn">Find best seats together</button>
           </div>
           </section>
+          <section class="side-box floor-box">
+            <h4>Floor</h4>
+          <div class="floor-tabs" id="floorTabs" role="tablist" aria-label="Floor">
+            <button class="on fl-ground" data-floor="ground" role="tab"><span class="fl-name">Ground floor</span><small>VIP · Gold · Silver · Bronze</small></button>
+            <button class="fl-gallery" data-floor="gallery" role="tab"><span class="fl-name">Gallery ⬆</span><small>Upstairs · 300 Gold seats</small></button>
+          </div>
+          </section>
           <section class="side-box legend-box">
-            <h4>Seat colours <small>tap one to highlight</small></h4>
+            <h4>Seat colours <small>tap to highlight</small></h4>
             <div class="legend" id="legend">
               <button class="lg lg-all active" data-filter="all"><svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 20h-6M20 20v-6M20 4h-6M20 4v6M4 20h6M4 20v-6"/></svg>All seats</button>
               <button class="lg tier" data-filter="vip"><i class="sw vip"></i><span>VIP<b>Rs.5,000</b></span></button>

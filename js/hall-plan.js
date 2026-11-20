@@ -31,10 +31,10 @@
   // A block = a rectangle of seats. x/y = centre of its first seat (front-left).
   const BLOCKS = [
     // ---- ground floor ----
-    { id: 'gL', floor: 'ground', rows: 'ABCDEFGHIJKLMN', seats: 28, first: 1,  x: 80,   y: 260, side: 'left' },
-    { id: 'gR', floor: 'ground', rows: 'ABCDEFGHIJKLMN', seats: 28, first: 29, x: 1000, y: 260, side: 'right' },
-    { id: 'bL', floor: 'ground', rows: 'PQRSTUVW', seats: 6,  first: 1, x: 645,  y: 860, side: 'left' },
-    { id: 'bR', floor: 'ground', rows: 'PQRSTUVW', seats: 12, first: 7, x: 1095, y: 860, side: 'right' },
+    { id: 'gL', floor: 'ground', rows: 'ABCDEFGHIJKLMN', seats: 28, first: 1,  x: 80,   y: 200, side: 'left' },
+    { id: 'gR', floor: 'ground', rows: 'ABCDEFGHIJKLMN', seats: 28, first: 29, x: 1000, y: 200, side: 'right' },
+    { id: 'bL', floor: 'ground', rows: 'PQRSTUVW', seats: 6,  first: 1, x: 645,  y: 800, side: 'left' },
+    { id: 'bR', floor: 'ground', rows: 'PQRSTUVW', seats: 12, first: 7, x: 1095, y: 800, side: 'right' },
     // ---- gallery (upstairs) ----
     { id: 'G1', floor: 'gallery', rows: 'ABCDEFGHIJKLMN', prefix: 'G', seats: 5, first: 1,  x: 110,  y: 200, side: 'left' },
     { id: 'G2', floor: 'gallery', rows: 'ABCDEFGHIJKLMN', prefix: 'G', seats: 5, first: 6,  x: 430,  y: 200 },
@@ -74,21 +74,21 @@
 
   const FLOORS = {
     ground: {
-      label: 'Ground floor', w: 1890, h: 1140,
-      stage: { x: 665, y: 24, w: 560, h: 150, label: 'STAGE' },
+      label: 'Ground floor', w: 1890, h: 1080,
+      stage: { x: 595, y: 24, w: 700, h: 104, label: 'STAGE' },
       boxes: [
-        { x: 835, y: 842, w: 220, h: 260, label: 'LIFT', kind: 'lift' },
+        { x: 835, y: 782, w: 220, h: 260, label: 'LIFT', kind: 'lift' },
       ],
       notes: [
-        { x: 945, y: 232, text: 'VIP · ROWS A–C', tier: 'vip' },
-        { x: 945, y: 370, text: 'GOLD · ROWS D–I', tier: 'gold' },
-        { x: 945, y: 598, text: 'SILVER · ROWS J–N', tier: 'silver' },
-        { x: 945, y: 820, text: 'BRONZE · ROWS P–W', tier: 'bronze' },
+        { x: 945, y: 172, text: 'VIP · ROWS A–C', tier: 'vip' },
+        { x: 945, y: 310, text: 'GOLD · ROWS D–I', tier: 'gold' },
+        { x: 945, y: 538, text: 'SILVER · ROWS J–N', tier: 'silver' },
+        { x: 945, y: 760, text: 'BRONZE · ROWS P–W', tier: 'bronze' },
       ],
     },
     gallery: {
       label: 'Gallery (upstairs)', w: 1500, h: 680,
-      stage: { x: 470, y: 24, w: 560, h: 60, label: 'BALCONY FRONT · FACING THE STAGE', kind: 'rail' },
+      stage: { x: 400, y: 24, w: 700, h: 60, label: 'BALCONY FRONT · FACING THE STAGE', kind: 'rail' },
       boxes: [
         { x: 680, y: 330, w: 140, h: 310, label: 'BUFFET & SOUND', kind: 'service' },
       ],

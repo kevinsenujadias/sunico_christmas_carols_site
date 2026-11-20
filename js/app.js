@@ -167,7 +167,7 @@
   }
   /* computers: Floor buttons + seat colours sit inside the map, in the empty corners beside the stage */
   function placeControls() {
-    const inMap = !fitMode();
+    const inMap = false;   // controls live in the side panel (computers) / above the map (phones)
     document.body.classList.toggle('ctl-in-map', inMap);
     const legend = $('#legend'), tabs = $('#floorTabs');
     if (inMap) { $('#ovLegend').appendChild(legend); $('#ovFloor').appendChild(tabs); }
