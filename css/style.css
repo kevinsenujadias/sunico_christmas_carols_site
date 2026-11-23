@@ -543,7 +543,7 @@ legend{font-family:var(--f-serif);font-size:1.4rem;font-weight:600;padding:0 .5r
 .footer .script{font-size:1.5rem;color:var(--gold-2)}
 .footer .small{font-size:.85rem}
 .footer .link-btn{margin:0}
-.foot-links{display:flex;gap:1.2rem}
+.foot-links{display:flex;gap:.5rem 1.2rem;flex-wrap:wrap;justify-content:center}
 
 /* ---------- responsive ---------- */
 @media (max-width:1024px){
@@ -1238,3 +1238,4 @@ button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,11
   .c-contact small,.c-name small,.c-ref small{display:inline;margin-left:.4rem}
   .table-wrap td.empty{display:block;text-align:center;padding:1rem}
 }
+.check a{color:var(--gold-2);text-decoration:underline}
