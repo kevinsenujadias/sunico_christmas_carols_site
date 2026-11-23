@@ -781,6 +781,10 @@
   let staffOpen = sessionStorage.getItem('wv_staff') === '1';
   let adminQuery = '';
 
+  function staffLock() {
+    staffOpen = false; sessionStorage.removeItem('wv_staff'); Backend.staffLogout(); stopScan(); renderAdmin(false);
+  }
+
   async function renderAdmin(refetch = true) {
     if (Backend.live) staffOpen = Backend.staffSignedIn;
     $('#adminGate').hidden = staffOpen;
@@ -816,14 +820,14 @@
     $('#bkBody').innerHTML = rows.length ? rows.map(b => {
       const ins = b.tickets.filter(t => t.checkedInAt).length;
       return `<tr class="bk-row" data-ref="${b.ref}">
-        <td class="mono">${b.ref}${b.paymentId ? `<small>PayHere ${esc(b.paymentId)}</small>` : ''}</td>
-        <td>${esc(fullName(b))}<small>${esc(b.customer.role || '')}${b.customer.student ? ' · ' + esc(b.customer.student) : ''}</small></td>
-        <td>${esc(b.customer.phone || '')}<small>${esc(b.customer.email || '')}</small></td>
-        <td>${b.tickets.map(t => `<span class="seat-tag ${t.tier}${t.checkedInAt ? ' in' : ''}">${t.seat}</span>`).join('')}</td>
-        <td class="num">${rs(b.amount)}</td>
-        <td><span class="status ${isValid(b) ? 'ok' : 'warn'}">${statusLabel(b)}</span></td>
-        <td class="num">${ins}/${b.tickets.length}</td>
-        <td><small>${fmtDate(b.createdAt)}</small></td>
+        <td class="mono c-ref">${b.ref}${b.paymentId ? `<small>PayHere ${esc(b.paymentId)}</small>` : ''}</td>
+        <td class="c-name">${esc(fullName(b))}<small>${esc(b.customer.role || '')}${b.customer.student ? ' · ' + esc(b.customer.student) : ''}</small></td>
+        <td class="c-contact">${esc(b.customer.phone || '')}<small>${esc(b.customer.email || '')}</small></td>
+        <td class="c-seats">${b.tickets.map(t => `<span class="seat-tag ${t.tier}${t.checkedInAt ? ' in' : ''}">${t.seat}</span>`).join('')}</td>
+        <td class="num c-amt">${rs(b.amount)}</td>
+        <td class="c-pay"><span class="status ${isValid(b) ? 'ok' : 'warn'}">${statusLabel(b)}</span></td>
+        <td class="num c-in"><span class="c-lbl">In </span>${ins}/${b.tickets.length}</td>
+        <td class="c-date"><small>${fmtDate(b.createdAt)}</small></td>
       </tr>`;
     }).join('') : `<tr><td colspan="8" class="empty">${staffBookings.length ? 'No bookings match your search.' : 'No bookings yet.'}</td></tr>`;
   }
@@ -954,7 +958,22 @@
     });
     $('#cashForm').addEventListener('submit', recordCashSale);
     $('#pinInput').addEventListener('input', e => e.target.classList.remove('bad'));
-    $('#lockBtn').onclick = () => { staffOpen = false; sessionStorage.removeItem('wv_staff'); Backend.staffLogout(); stopScan(); renderAdmin(); };
+    $('#lockBtn').onclick = () => staffLock();
+
+    /* auto sign-out: 10 minutes with no taps, typing or scrolling → lock and go Home */
+    const IDLE_MS = 10 * 60 * 1000;
+    let lastActive = Date.now();
+    const poke = () => { lastActive = Date.now(); };
+    ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(ev => addEventListener(ev, poke, { passive: true }));
+    const idleCheck = () => {
+      if (!staffOpen && !Backend.staffSignedIn) return;
+      if (Date.now() - lastActive < IDLE_MS) return;
+      staffLock();
+      if (location.hash === '#admin') location.hash = '#home';
+      toast('Staff page locked after 10 minutes of no activity. Enter the PIN to continue.');
+    };
+    setInterval(idleCheck, 20000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) idleCheck(); });
     $('#ciForm').addEventListener('submit', e => { e.preventDefault(); doCheckIn($('#ciInput').value); });
     $('#scanBtn').onclick = () => (camStream ? stopScan() : startScan());
     $('#bkSearch').addEventListener('input', e => { adminQuery = e.target.value; renderAdmin(false); });

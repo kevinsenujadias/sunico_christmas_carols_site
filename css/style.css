@@ -1201,3 +1201,40 @@ button.lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,11
   .seat-side .lg[data-filter=vip].active{border-color:var(--vip);background:rgba(169,112,255,.2)}
   .seat-side .summary .total-row strong{font-size:1.5rem}
 }
+
+/* ===== staff page on phones ===== */
+.admin>*{min-width:0}
+.c-lbl{display:none}
+@media (max-width:860px){
+  .checkin{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .stats>:last-child{grid-column:1/-1}
+}
+@media (max-width:700px){
+  .admin{gap:1rem}
+  .ci-left,.ci-result,.bk-table-card,.cash-card{padding:1.1rem;border-radius:18px}
+  .ci-left h3,.bk-tools h3,.cash-card h3{font-size:1.35rem}
+  .ci-form{flex-direction:column}
+  .ci-form .btn{width:100%}
+  .ci-result .btn{padding:.55rem .9rem}
+  .bk-tools{gap:.5rem}
+  .bk-tools h3{flex-basis:100%}
+  .bk-tools input{flex:1 1 100%}
+  .bk-tools .btn{flex:1}
+  /* bookings table → one card per booking */
+  .table-wrap{border:0;overflow:visible}
+  .table-wrap table{min-width:0}
+  .table-wrap thead{display:none}
+  .table-wrap tbody{display:grid;gap:.6rem}
+  .table-wrap tr.bk-row{display:grid;grid-template-columns:1fr auto;grid-template-areas:"ref pay" "name amt" "contact contact" "seats seats" "date in";
+    gap:.25rem .8rem;padding:.85rem .95rem;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+  .table-wrap tr.bk-row td{padding:0;border:0;min-width:0}
+  .c-ref{grid-area:ref;font-size:.95rem}.c-pay{grid-area:pay;justify-self:end}
+  .c-name{grid-area:name;font-weight:600}.c-amt{grid-area:amt;justify-self:end;font-weight:600}
+  .c-contact{grid-area:contact;word-break:break-word}
+  .c-seats{grid-area:seats;display:flex;flex-wrap:wrap;gap:.3rem;padding-top:.2rem!important}
+  .c-date{grid-area:date}.c-in{grid-area:in;justify-self:end}
+  .c-lbl{display:inline;color:var(--muted)}
+  .c-contact small,.c-name small,.c-ref small{display:inline;margin-left:.4rem}
+  .table-wrap td.empty{display:block;text-align:center;padding:1rem}
+}
