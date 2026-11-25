@@ -223,7 +223,7 @@
       <div class="page-head">
         <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
         <div class="steps">
-          <span class="step on">1 · Seats</span><i></i><span class="step">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
+          <span class="step on">1 · Seats</span><i></i><span class="step">2 · Details</span><i></i><span class="step">3 · Pay</span><i></i><span class="step">4 · Tickets</span>
         </div>
         <h2>Choose your seats <em>in Namal Hall</em></h2>
         <p class="lead">Tap a seat to pick it. Seats nearer the stage cost more. You can pick up to <b id="maxSeatsLbl">10</b> seats.</p>
@@ -320,7 +320,7 @@
       <div class="page-head">
         <button class="back-btn" data-go="seats" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Back to seats</button>
         <div class="steps">
-          <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
+          <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Details</span><i></i><span class="step">3 · Pay</span><i></i><span class="step">4 · Tickets</span>
         </div>
         <h2>Checkout</h2>
         <p class="lead">Your tickets will be issued in this name. We'll email them to you once your payment is confirmed.</p>
@@ -377,12 +377,25 @@
       </div>
     </section>
 
+    <!-- ================= PAY (bank transfer) ================= -->
+    <section class="view" id="view-pay">
+      <div class="page-head">
+        <button class="back-btn" data-go="tickets" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>My tickets</button>
+        <div class="steps">
+          <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Details</span><i></i><span class="step on">3 · Pay</span><i></i><span class="step">4 · Tickets</span>
+        </div>
+        <h2>Pay by <em>bank transfer</em></h2>
+        <p class="lead" id="payLead">Your seats are reserved. Transfer the amount below to the school's account, then upload your slip.</p>
+      </div>
+      <div class="pay-page" id="payPage"></div>
+    </section>
+
     <!-- ================= TICKETS ================= -->
     <section class="view" id="view-tickets">
       <div class="page-head">
         <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
         <div class="steps">
-          <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Checkout</span><i></i><span class="step on">3 · Tickets</span>
+          <span class="step done">1 · Seats</span><i></i><span class="step done">2 · Details</span><i></i><span class="step done">3 · Pay</span><i></i><span class="step on">4 · Tickets</span>
         </div>
         <h2 id="ticketsTitle">Your tickets</h2>
         <p class="lead" id="ticketsLead">Show the QR code at the door. When staff scan it, your ticket tears off and is marked <b>ADMITTED</b>. Anyone can scan the QR to check it's genuine.</p>

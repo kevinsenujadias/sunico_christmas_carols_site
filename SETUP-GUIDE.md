@@ -14,20 +14,13 @@
    A slip was sent → seats stay held until staff approve or reject. Late money can still be approved if the seats are free.
 6. Limits against seat-hoarding: max 2 unpaid transfers per phone/email, 6 per internet address, 10 seats per booking.
 
-### Netlify variables for bank transfer
+### The school's bank account
+Sampath Bank · Gampaha (16) · Sumedha Noble International College (Pvt) Ltd. · 001610011051
 
-| Variable | Example | Secret? |
-|---|---|---|
-| `BANK_NAME` | `Bank of Ceylon` | no |
-| `BANK_BRANCH` | `Negombo` | no |
-| `BANK_ACCOUNT_NAME` | `SUNICO (Pvt) Ltd` | no |
-| `BANK_ACCOUNT_NO` | `0001234567` | no (shown to every buyer) |
-| `BANK_HOLD_HOURS` | `24` (optional) | no |
-| `PAYMENT_METHODS` | `bank` (default) | no |
-| `STAFF_SESSION_HOURS` | `12` (optional) | no |
+These are written in the server code (`netlify/lib/http.mjs`, `SCHOOL_BANK`), **not** in a Netlify setting,
+so they can only be changed by a code change pushed to GitHub. Nobody can change them from the website or a browser.
 
-Until the four `BANK_*` details are added, the site shows **sample** bank details and a red
-"TEST MODE · don't transfer money" banner, so nobody pays into a wrong account.
+Optional Netlify variables: `BANK_HOLD_HOURS` (default `24`), `PAYMENT_METHODS` (default `bank`), `STAFF_SESSION_HOURS` (default `12`).
 
 ### After pulling this version: run the database file again
 Supabase → SQL Editor → paste all of `supabase/schema.sql` → Run. It adds the bank-transfer parts and the

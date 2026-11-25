@@ -636,7 +636,13 @@
     show('Reserving your seats…', 'One moment.');
     try {
       const { booking } = await Backend.createTransfer(customer, sortedSeats.map(s => s.id));
-      finishBooking(booking);
+      bookings = [booking, ...bookings.filter(b => b.ref !== booking.ref)];
+      myRefs = [booking.ref, ...myRefs.filter(r => r !== booking.ref)]; store.set('wv_my_refs', myRefs);
+      markTaken(booking.tickets.map(t => t.seat));
+      updateSummary(); updateAvailability();
+      $('#coForm').reset();
+      $('#payModal').hidden = true;
+      openPay(booking.ref);
     } catch (e) {
       $('#payModal').hidden = true;
       if (e.data?.error === 'SEAT_TAKEN') { markTaken(e.data.taken || []); updateSummary(); updateAvailability(); toast(e.data.message); go('seats'); }
@@ -736,46 +742,142 @@
     return h ? `${h}h ${m}m left` : `${m} min left`;
   };
 
-  /* the bank-transfer box on My Tickets: steps, bank details with copy buttons, slip upload */
-  function bankBox(b) {
+  /* copy to clipboard, with a fallback for older phones, and a ✓ on the button */
+  async function copyText(btn) {
+    const text = btn.dataset.copy;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch {} ta.remove();
+    }
+    if (!ok) { toast('Could not copy. Please write it down: ' + esc(text)); return; }
+    toast(text.includes('\n') ? 'Copied all payment details.' : `Copied <b>${esc(text)}</b>`);
+    const lbl = btn.querySelector('span');
+    btn.classList.add('copied');
+    if (lbl) { const was = lbl.textContent; lbl.textContent = 'Copied ✓'; setTimeout(() => { lbl.textContent = was; btn.classList.remove('copied'); }, 1800); }
+    else setTimeout(() => btn.classList.remove('copied'), 1800);
+  }
+
+  /* ---------- PAY page: everything the buyer needs to make the transfer ---------- */
+  let payRef = sessionStorage.getItem('wv_pay_ref') || null;
+  function openPay(ref) { payRef = ref; sessionStorage.setItem('wv_pay_ref', ref); go('pay'); }
+  const copyBtn = (v, label, big) => `<button class="copy-chip${big ? ' big' : ''}" type="button" data-copy="${esc(String(v))}" aria-label="Copy ${label}"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg><span>Copy</span></button>`;
+  const deadlineTxt = iso => new Date(iso).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+
+  function renderPay() {
+    const page = $('#payPage');
+    const b = bookings.find(x => x.ref === payRef);
+    clearInterval(renderPay._clock); clearTimeout(renderPay._poll);
+    if (!b) {
+      page.innerHTML = `<div class="pay-missing"><p>We couldn't find that booking on this phone.</p><a class="btn btn-gold" href="#tickets" data-go="tickets">Go to My tickets</a></div>`;
+      return;
+    }
+    if (isValid(b)) { justPaidRef = b.ref; go('tickets'); return; }          // already approved
     const bank = Backend.bank || {};
-    const cp = (v, label) => `<button class="copy-chip" type="button" data-copy="${esc(String(v).replace(/\s/g, ''))}" aria-label="Copy ${label}"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>Copy</button>`;
+    const slipped = !!b.slipAt, rejected = b.status === 'rejected', expired = b.status === 'expired';
+    $('#payLead').innerHTML = rejected ? 'This booking was not approved.'
+      : expired ? 'The time to pay for this booking has run out.'
+      : slipped ? `Thank you, ${esc(b.customer.first)}! We've got your slip. The school will confirm your payment soon.`
+      : `${esc(b.customer.first)}, your seats are reserved. Transfer <b>${rs(b.amount)}</b> to the school's account below, then upload your slip.`;
+    const allText = `Bank: ${bank.bank}\nBranch: ${bank.branch}\nAccount name: ${bank.accountName}\nAccount number: ${bank.accountNo}\nAmount: ${b.amount}\nRemarks: ${b.ref}`;
+
+    if (rejected || expired) {
+      page.innerHTML = `<div class="pay-card pay-stop">
+        <h3>${rejected ? 'Booking not approved' : 'Time ran out'}</h3>
+        <p>${rejected ? esc(b.reviewNote || 'The school could not find your transfer.') : 'We did not receive a slip in time, so the seats were released.'}
+          If you already transferred the money, email <a href="mailto:sunico2023@gmail.com">sunico2023@gmail.com</a> with booking number <b>${b.ref}</b> and your slip.</p>
+        <a class="btn btn-gold" href="#seats" data-go="seats">Choose seats again</a></div>`;
+      return;
+    }
+
+    page.innerHTML = `
+      <div class="pay-grid">
+        <div class="pay-card pay-main">
+          <div class="pay-progress">
+            <span class="done">Seats reserved</span><span class="${slipped ? 'done' : 'now'}">Transfer &amp; upload slip</span><span class="${slipped ? 'now' : ''}">School confirms</span><span>Tickets ready</span>
+          </div>
+
+          <div class="pay-amount">
+            <small>Amount to transfer</small>
+            <div><b>${rs(b.amount)}</b>${copyBtn(b.amount, 'amount', true)}</div>
+            <span>Transfer the <b>exact</b> amount, so we can match it to your booking.</span>
+          </div>
+
+          <div class="pay-ref">
+            <small>Write this in the remarks / reference</small>
+            <div><b class="mono">${b.ref}</b>${copyBtn(b.ref, 'booking number', true)}</div>
+            <span>This is how the school knows the payment is yours. Don't leave it out.</span>
+          </div>
+
+          <h4 class="pay-h">School bank account</h4>
+          <dl class="pay-bank">
+            <div><dt>Bank</dt><dd>${esc(bank.bank)}</dd></div>
+            <div><dt>Branch</dt><dd>${esc(bank.branch)}</dd></div>
+            <div><dt>Account name</dt><dd>${esc(bank.accountName)}</dd>${copyBtn(bank.accountName, 'account name')}</div>
+            <div><dt>Account number</dt><dd class="mono acc">${esc(bank.accountNo)}</dd>${copyBtn(bank.accountNo, 'account number')}</div>
+          </dl>
+          <button class="btn btn-ghost btn-block" type="button" data-copy="${esc(allText)}">Copy all payment details</button>
+          <p class="pay-safe"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span>Only pay into <b>${esc(bank.accountName)}</b>, ${esc(bank.bank)}. The school will <b>never</b> ask you to pay into a different account by phone, SMS or WhatsApp.</span></p>
+        </div>
+
+        <aside class="pay-side">
+          <div class="pay-card pay-timer">
+            <small>Seats held until</small>
+            <b>${deadlineTxt(b.expiresAt)}</b>
+            <span class="pay-left" data-until="${b.expiresAt}">${slipped ? 'Held while the school checks your slip' : timeLeft(b.expiresAt)}</span>
+            <div class="pay-seats">${b.tickets.map(t => `<span class="seat-tag ${t.tier}">${t.seat}</span>`).join('')}</div>
+          </div>
+
+          <div class="pay-card pay-upload${slipped ? ' ok' : ''}">
+            ${slipped ? `
+              <div class="pay-got"><span class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <div><b>Slip received</b><p>Sent ${fmtDate(b.slipAt)}. The school checks its bank account and confirms, usually within a day. Your tickets will appear in <b>My tickets</b> and be emailed to <b>${esc(b.customer.email || '')}</b>.</p></div></div>
+              <label class="btn btn-ghost btn-block slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden /><span>Send a different slip</span></label>`
+            : `
+              <h4>Done the transfer?</h4>
+              <p>Upload a screenshot from your banking app, or a photo of the bank slip.</p>
+              <label class="slip-drop slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
+                <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+                <b>Upload your slip</b><span>JPG, PNG or PDF</span></label>`}
+            <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">${slipped ? 'Go to My tickets' : "I'll pay later: go to My tickets"}</a>
+          </div>
+
+          <ol class="pay-how">
+            <li>Open your banking app (or go to any bank).</li>
+            <li>Transfer <b>${rs(b.amount)}</b> to the account shown.</li>
+            <li>Put <b>${b.ref}</b> in the remarks.</li>
+            <li>Upload the slip here. We'll email your tickets once it's confirmed.</li>
+          </ol>
+        </aside>
+      </div>`;
+    $$('[data-slip]', page).forEach(inp => inp.addEventListener('change', () => sendSlip(inp)));
+    // live countdown + notice when the school approves
+    renderPay._clock = setInterval(() => { const el = $('.pay-left[data-until]'); if (el && !slipped) el.textContent = timeLeft(el.dataset.until); }, 30000);
+    if (Backend.live) renderPay._poll = setTimeout(async function poll() {
+      if (location.hash !== '#pay') return;
+      const nb = await Backend.getBooking(b.ref).catch(() => null);
+      if (nb && (nb.status !== b.status || nb.slipAt !== b.slipAt)) { bookings = bookings.map(x => x.ref === nb.ref ? nb : x); renderPay(); return; }
+      renderPay._poll = setTimeout(poll, 15000);
+    }, 15000);
+  }
+
+  /* My tickets: short card for a booking still waiting for its transfer */
+  function bankBox(b) {
     if (b.status === 'rejected') return `
       <div class="bk-wait warn"><div><b>This booking was not approved</b>
-        <p>${esc(b.reviewNote || 'The school could not find your transfer.')} The seats have been released. If you did transfer the money, please email
-        <a href="mailto:sunico2023@gmail.com">sunico2023@gmail.com</a> with your booking number <b>${b.ref}</b> and slip.</p></div></div>`;
-    const slipped = !!b.slipAt;
-    const deadline = new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+        <p>${esc(b.reviewNote || 'The school could not find your transfer.')} The seats have been released. If you did transfer the money, email
+        <a href="mailto:sunico2023@gmail.com">sunico2023@gmail.com</a> with booking number <b>${b.ref}</b> and your slip.</p></div></div>`;
     return `
-    <div class="bank-box">
-      <ol class="bank-steps">
-        <li class="done"><i>1</i><span>Seats held</span></li>
-        <li class="${slipped ? 'done' : 'now'}"><i>2</i><span>Transfer &amp; send slip</span></li>
-        <li class="${slipped ? 'now' : ''}"><i>3</i><span>School confirms</span></li>
-        <li><i>4</i><span>Tickets ready</span></li>
-      </ol>
-      ${bank.sample ? `<p class="bank-sample">⚠️ TEST MODE: these are <b>sample</b> bank details. Do <b>not</b> transfer any money yet.</p>` : ''}
-      ${slipped ? `
-        <div class="bank-done"><span class="spin"></span><div><b>Slip received, thank you!</b>
-          <p>The school will check the payment in its bank account and confirm your booking, usually within a day. Your tickets will appear here, and we'll email them to <b>${esc(b.customer.email || '')}</b>.</p></div></div>`
-      : `
-        <p class="bank-lead">Transfer <b>exactly ${rs(b.amount)}</b> to the school account below and write your booking number in the remarks.
-          Seats ${b.tickets.map(t => t.seat).join(', ')} are held until <b>${deadline}</b> <span class="bank-left">(${timeLeft(b.expiresAt)})</span>.</p>`}
-      <dl class="bank-details">
-        <div class="hl"><dt>Amount</dt><dd>${rs(b.amount)}</dd>${cp(b.amount, 'amount')}</div>
-        <div class="hl"><dt>Remarks / reference</dt><dd class="mono">${b.ref}</dd>${cp(b.ref, 'reference')}</div>
-        <div><dt>Bank</dt><dd>${esc(bank.bank || '')}${bank.branch ? ` · ${esc(bank.branch)}` : ''}</dd></div>
-        <div><dt>Account name</dt><dd>${esc(bank.accountName || '')}</dd>${cp(bank.accountName || '', 'account name')}</div>
-        <div><dt>Account number</dt><dd class="mono">${esc(bank.accountNo || '')}</dd>${cp(bank.accountNo || '', 'account number')}</div>
-      </dl>
-      <label class="btn ${slipped ? 'btn-ghost' : 'btn-gold'} btn-block slip-btn">
-        <input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
-        <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-        <span>${slipped ? 'Send a different slip' : 'Upload your transfer slip'}</span>
-      </label>
-      <p class="bank-note">A screenshot from your bank app or a photo of the bank slip is fine. Your tickets are issued only after the money reaches the school account, so a slip on its own is not enough.</p>
-    </div>`;
+      <div class="bk-wait bank-mini">
+        ${b.slipAt ? '<span class="spin"></span>' : '<span class="bank-ic"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg></span>'}
+        <div><b>${b.slipAt ? 'Slip received: the school is checking your payment' : `Waiting for your transfer of ${rs(b.amount)}`}</b>
+          <p>Seats ${b.tickets.map(t => t.seat).join(', ')} ${b.slipAt ? 'are held for you. Your tickets will appear here once confirmed.' : `are held until ${new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${timeLeft(b.expiresAt)}).`}</p></div>
+        <button class="btn ${b.slipAt ? 'btn-ghost' : 'btn-gold'} btn-sm" type="button" data-pay="${b.ref}">${b.slipAt ? 'View payment' : 'Pay now'}</button>
+      </div>`;
   }
+
   const isValid = b => ['paid', 'paid-demo', 'cash'].includes(b.status);
 
   function renderTickets() {
@@ -830,21 +932,21 @@
       bookings = await DB.all().catch(() => bookings);
       if (stateOf(bookings) !== before) renderTickets(); else renderTickets._t = setTimeout(poll, waiting ? 4000 : 15000);
     }, waiting ? 4000 : 15000);
-    $$('[data-slip]', box).forEach(inp => inp.addEventListener('change', () => sendSlip(inp)));
+    $$('[data-pay]', box).forEach(x => x.addEventListener('click', () => openPay(x.dataset.pay)));
     $$('.ticket', box).forEach((tk, i) => { tk.style.animationDelay = (i * 0.1) + 's'; bindTicket(tk); });
   }
 
   async function sendSlip(inp) {
     const file = inp.files[0]; if (!file) return;
-    const btn = inp.closest('.slip-btn'), lbl = btn.querySelector('span');
+    const btn = inp.closest('.slip-btn'), lbl = btn.querySelector('b') || btn.querySelector('span');
     btn.classList.add('busy'); lbl.textContent = 'Uploading…';
     try {
       const b = await Backend.uploadSlip(inp.dataset.slip, file);
       bookings = bookings.map(x => x.ref === b.ref ? b : x);
-      renderTickets();
+      location.hash === '#pay' ? renderPay() : renderTickets();
       toast('Slip received. The school will confirm your booking soon.');
     } catch (e) {
-      btn.classList.remove('busy'); lbl.textContent = 'Upload your transfer slip';
+      btn.classList.remove('busy'); lbl.textContent = 'Upload your slip';
       toast(e.message || 'Could not upload the slip. Please try again.');
     }
     inp.value = '';
@@ -1197,7 +1299,7 @@
   /* =========================================================
      ROUTER
      ========================================================= */
-  const VIEWS = ['home', 'seats', 'checkout', 'tickets', 'admin'];
+  const VIEWS = ['home', 'seats', 'checkout', 'pay', 'tickets', 'admin'];
   function go(v) { if (location.hash === '#' + v) route(); else location.hash = v; }
   function route() {
     let v = location.hash.slice(1) || 'home';
@@ -1211,6 +1313,7 @@
     if (v === 'seats') requestAnimationFrame(phoneStart);
     if (v === 'checkout') renderCheckout();
     if (v === 'tickets') renderTickets();
+    if (v === 'pay') renderPay();
     if (v === 'admin') renderAdmin(); else if (typeof stopScan === 'function' && camStream) stopScan();
     if (anchor && document.getElementById(anchor)) setTimeout(() => document.getElementById(anchor).scrollIntoView({ behavior: 'smooth' }), 60);
     else scrollTo({ top: 0, behavior: cur === next ? 'smooth' : 'instant' });
@@ -1480,9 +1583,11 @@
       const pt = e.target.closest('[data-pick-tier]');
       if (pt) { go('seats'); setTimeout(() => setFilter(pt.dataset.pickTier), 350); }
       const cp = e.target.closest('[data-copy]');
-      if (cp) { navigator.clipboard?.writeText(cp.dataset.copy).then(() => toast(`Copied <b>${cp.dataset.copy}</b>`), () => toast(cp.dataset.copy)); }
+      if (cp) copyText(cp);
     });
     addEventListener('hashchange', route);
+    // nothing on the page can be dragged out (pictures, logo, titles); file pickers still work
+    document.addEventListener('dragstart', e => { if (!e.target.closest?.('input')) e.preventDefault(); });
     // phone menu
     const menu = $('#mobileMenu'), menuBtn = $('#menuBtn');
     const setMenu = open => { menu.hidden = !open; menuBtn.setAttribute('aria-expanded', open); menuBtn.classList.toggle('open', open); document.body.classList.toggle('menu-open', open); };
