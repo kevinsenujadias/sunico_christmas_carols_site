@@ -809,14 +809,17 @@
           <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">My tickets</a>
         </div>` : ''}
 
-        <div class="px-card">
-          <div class="px-total"><small>Amount</small><b>${rs(b.amount)}</b>${copyBtn(b.amount, 'amount', true)}</div>
-          ${row('Remarks / reference', `<span class="mono px-ref">${b.ref}</span>`, b.ref, 'px-hl')}
-          ${row('Account number', `<span class="mono">${esc(bank.accountNo)}</span>`, bank.accountNo)}
-          ${row('Account name', esc(bank.accountName), bank.accountName)}
-          ${row('Bank', `${esc(bank.bank)} · ${esc(bank.branch)}`)}
-          <button class="px-copyall" type="button" data-copy="${esc(allText)}"><span>Copy all details</span></button>
+        <div class="px-card px-bank">
+          <div class="px-bank-top"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg><span>${esc(bank.bank)} · ${esc(bank.branch)}</span></div>
+          <div class="px-acc"><small>Account number</small><b class="mono">${esc(bank.accountNo)}</b>${copyBtn(bank.accountNo, 'account number', true)}</div>
+          <div class="px-name"><small>Account name</small><b>${esc(bank.accountName)}</b>${copyBtn(bank.accountName, 'account name')}</div>
         </div>
+
+        <div class="px-pair">
+          <div class="px-mini"><small>Amount</small><b>${rs(b.amount)}</b>${copyBtn(b.amount, 'amount')}</div>
+          <div class="px-mini px-hl"><small>Remarks</small><b class="mono">${b.ref}</b>${copyBtn(b.ref, 'booking number')}</div>
+        </div>
+        <button class="px-copyall" type="button" data-copy="${esc(allText)}"><span>Copy all details</span></button>
 
         ${slipped ? `
         <label class="px-upload ghost slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
