@@ -323,7 +323,7 @@
           <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Checkout</span><i></i><span class="step">3 · Tickets</span>
         </div>
         <h2>Checkout</h2>
-        <p class="lead">Your tickets will be issued in this name. We'll send a copy to your email.</p>
+        <p class="lead">Your tickets will be issued in this name. We'll email them to you once your payment is confirmed.</p>
       </div>
 
       <div class="checkout-layout">
@@ -348,14 +348,7 @@
 
           <fieldset>
             <legend>Payment</legend>
-            <div class="pay-option selected">
-              <div class="radio"></div>
-              <div>
-                <strong>PayHere</strong>
-                <p>Pay by card, eZ Cash, mCash, Genie or bank transfer on PayHere's secure page.</p>
-              </div>
-              <span class="badge">Coming soon</span>
-            </div>
+            <div id="payOptions"></div>
             <p class="note" id="payNote"></p>
           </fieldset>
 
@@ -430,7 +423,8 @@
         <form id="pinForm" class="pin-card">
           <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
           <h3>Enter staff PIN</h3>
-          <label class="field"><input id="pinInput" type="password" inputmode="numeric" placeholder="••••" autocomplete="off" /></label>
+          <p class="note">Only for SUNICO staff. Wrong PINs are counted, and 8 wrong tries lock this device for 15 minutes.</p>
+          <label class="field"><input id="pinInput" type="password" inputmode="numeric" placeholder="••••••" autocomplete="off" /></label>
           <button class="btn btn-gold btn-block" type="submit">Unlock</button>
           <p class="note" id="pinNote">Demo PIN is 2026.</p>
         </form>
@@ -438,6 +432,18 @@
 
       <div class="admin" id="adminPanel" hidden>
         <div class="stats" id="stats"></div>
+
+        <div class="tr-card" id="trCard" hidden>
+          <div class="tr-head">
+            <h3>Bank transfers to confirm <small id="trCount"></small></h3>
+            <div class="tr-filter" role="tablist">
+              <button class="on" data-tr="slip" type="button">Slip sent</button>
+              <button data-tr="noslip" type="button">No slip yet</button>
+            </div>
+          </div>
+          <p class="lead small">Open the school bank account (app or statement). Find a payment with this <b>exact amount</b> and <b>booking number</b> in the remarks, then press <b>Approve</b>. The tickets are emailed automatically. A slip photo alone is <b>not</b> proof: always check the bank.</p>
+          <div class="tr-list" id="trList"></div>
+        </div>
 
         <div class="checkin">
           <div class="ci-left">
@@ -499,6 +505,14 @@
       <div class="loader"><img src="assets/img/coin-gold.png" alt="" /></div>
       <h3 id="payModalTitle">Contacting PayHere…</h3>
       <p id="payModalText">Demo mode: no money is taken.</p>
+    </div>
+  </div>
+
+  <!-- staff: transfer slip viewer -->
+  <div class="modal slip-modal" id="slipModal" hidden>
+    <div class="modal-card slip-card">
+      <div class="slip-top"><b id="slipTitle">Transfer slip</b><a id="slipOpen" target="_blank" rel="noopener" class="link-btn small">Open full size</a><button class="icon-btn" id="slipClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="slip-view" id="slipView"></div>
     </div>
   </div>
 

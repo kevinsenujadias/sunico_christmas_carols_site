@@ -11,7 +11,9 @@ window.Backend = (function () {
   const FN = '/.netlify/functions/';
   const KEYS = 'wv_my_keys';                   // { 'WV-XXXXXX': accessKey } for bookings made/found on this phone
   const state = { live: false, sandbox: true, cfg: null };
-  let staffPin = sessionStorage.getItem('wv_staff_pin') || '';
+  // staff: a signed pass from the server (expires on its own); the PIN itself is never stored
+  sessionStorage.removeItem('wv_staff_pin');
+  let staffPass = sessionStorage.getItem('wv_staff_pass') || '';
   let staffCache = [];
 
   const keys = () => { try { return JSON.parse(localStorage.getItem(KEYS)) || {}; } catch { return {}; } };
@@ -33,10 +35,14 @@ window.Backend = (function () {
     customer: b.customer || {}, paymentId: b.payment_id || null, paymentMethod: b.payment_method || null,
     createdAt: b.created_at, paidAt: b.paid_at, expiresAt: b.expires_at,
     emailSentAt: b.email_sent_at || null,
+    slipAt: b.slip_uploaded_at || null, reviewNote: b.review_note || null, reviewedAt: b.reviewed_at || null,
     tickets: (b.tickets || []).map(t => ({ ...t, price: Number(t.price) }))
   });
 
-  const staff = (body) => call('staff', { method: 'POST', body, headers: { 'x-staff-pin': staffPin } });
+  async function staff(body) {
+    try { return await call('staff', { method: 'POST', body, headers: { 'x-staff-pass': staffPass } }); }
+    catch (e) { if (e.status === 401) { staffPass = ''; sessionStorage.removeItem('wv_staff_pass'); } throw e; }
+  }
 
   async function init() {
     // opened from the confirmation email: ?booking=WV-XXXXXX&key=...#tickets
@@ -87,8 +93,29 @@ window.Backend = (function () {
       },
       async cashSale(seats, customer) { const r = await staff({ action: 'cash', seats, customer }); return Object.assign(norm(r.booking), { emailResult: r.email }); },
       async resendEmail(ref) { return (await staff({ action: 'email', ref })).result; },
+      async approveTransfer(ref, note) { const r = await staff({ action: 'approve', ref, note }); return Object.assign(norm(r.booking), { emailResult: r.email }); },
+      async rejectTransfer(ref, note) { return norm((await staff({ action: 'reject', ref, note })).booking); },
+      async slipLink(ref) { return staff({ action: 'slip', ref }); },
       async reset() { /* no reset on the real system */ }
     });
+  }
+
+  // photo -> JPEG no wider than 1600px (~200-500 KB); PDFs sent as they are (max 3 MB)
+  async function slipData(file) {
+    if (!file) throw new Error('Choose a photo or PDF of your slip.');
+    const toB64 = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
+    if (file.type === 'application/pdf') {
+      if (file.size > 3 * 1024 * 1024) throw new Error('That PDF is over 3 MB. Please send a screenshot instead.');
+      return toB64(file);
+    }
+    if (!/^image\//.test(file.type)) throw new Error('Please choose a photo (JPG/PNG) or a PDF.');
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not read that photo. Try a screenshot instead.')); i.src = URL.createObjectURL(file); });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(img.src);
+    const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.82));
+    return toB64(blob);
   }
 
   return {
@@ -96,6 +123,9 @@ window.Backend = (function () {
     get live() { return state.live; },
     get sandbox() { return state.sandbox; },
     get config() { return state.cfg; },
+    get methods() { return state.cfg?.methods || []; },
+    get bank() { return state.cfg?.bank || null; },
+    get testMode() { return !!state.cfg?.testMode; },
     remember,
     norm,
 
@@ -104,6 +134,18 @@ window.Backend = (function () {
       const r = await call('create-order', { method: 'POST', body: { customer, seats } });
       remember(r.booking.ref, r.accessKey);
       return { booking: norm(r.booking), accessKey: r.accessKey, payment: r.payment };
+    },
+    /** bank transfer: hold the seats, get the bank details + booking number */
+    async createTransfer(customer, seats) {
+      const r = await call('create-transfer', { method: 'POST', body: { customer, seats } });
+      remember(r.booking.ref, r.accessKey);
+      return { booking: norm(r.booking), bank: r.bank };
+    },
+    /** send the transfer slip (a photo is shrunk first so it uploads fast on mobile data) */
+    async uploadSlip(ref, file) {
+      const key = keys()[ref]; if (!key) throw new Error('This booking was made on another phone. Use "Find my tickets" first.');
+      const data = await slipData(file);
+      return norm((await call('upload-slip', { method: 'POST', body: { ref, key, data } })).booking);
     },
     async getBooking(ref) {
       const key = keys()[ref]; if (!key) return null;
@@ -123,12 +165,14 @@ window.Backend = (function () {
       }
       return this.getBooking(ref).catch(() => null);
     },
+    /** -> true, or an error message */
     async staffLogin(pin) {
-      staffPin = pin;
-      try { await staff({ action: 'login' }); sessionStorage.setItem('wv_staff_pin', pin); return true; }
-      catch { staffPin = ''; sessionStorage.removeItem('wv_staff_pin'); return false; }
+      try {
+        const r = await call('staff', { method: 'POST', body: { action: 'login', pin } });
+        staffPass = r.pass; sessionStorage.setItem('wv_staff_pass', staffPass); return true;
+      } catch (e) { staffPass = ''; sessionStorage.removeItem('wv_staff_pass'); return e.message || 'Wrong staff PIN.'; }
     },
-    staffLogout() { staffPin = ''; sessionStorage.removeItem('wv_staff_pin'); },
-    get staffSignedIn() { return !!staffPin; }
+    staffLogout() { staffPass = ''; sessionStorage.removeItem('wv_staff_pass'); },
+    get staffSignedIn() { return !!staffPass; }
   };
 })();

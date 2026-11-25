@@ -537,7 +537,7 @@
     $('#coLines').innerHTML = sorted.map(s =>
       `<li class="${s.tier}"><span><i></i>Row ${s.row} · Seat ${s.num} <small style="color:var(--dim)">${TIERS[s.tier].label}</small></span><span>${rs(TIERS[s.tier].price)}</span></li>`).join('');
     $('#coTotal').textContent = rs(total);
-    $('#payLbl').textContent = `Pay ${rs(total)} with PayHere`;
+    $('#payLbl').textContent = payMethod() === 'bank' ? `Reserve seats · ${rs(total)}` : `Pay ${rs(total)} with PayHere`;
   }
 
   function validate() {
@@ -597,6 +597,7 @@
     const modal = $('#payModal'), title = $('#payModalTitle'), text = $('#payModalText');
     const show = (t, x) => { title.textContent = t; text.textContent = x; modal.hidden = false; };
 
+    if (Backend.live && payMethod() === 'bank') return payBank(customer, sortedSeats, show);
     if (Backend.live) return payLive(customer, sortedSeats, show);
 
     // ---------- DEMO (no server yet) ----------
@@ -619,6 +620,27 @@
       markTaken(bookings.flatMap(b => b.tickets.map(t => t.seat)));
       updateSummary(); updateAvailability();
       toast('Booking not completed: ' + err.message);
+    }
+  }
+
+  // which way to pay: 'bank' or 'payhere' (from what the server has switched on + what the buyer picked)
+  function payMethod() {
+    if (!Backend.live) return 'payhere';
+    const m = Backend.methods;
+    if (m.length === 1) return m[0];
+    return $('#coForm').elements.method?.value || m[0];
+  }
+
+  // ---------- BANK TRANSFER: server holds the seats, buyer transfers, staff approve ----------
+  async function payBank(customer, sortedSeats, show) {
+    show('Reserving your seats…', 'One moment.');
+    try {
+      const { booking } = await Backend.createTransfer(customer, sortedSeats.map(s => s.id));
+      finishBooking(booking);
+    } catch (e) {
+      $('#payModal').hidden = true;
+      if (e.data?.error === 'SEAT_TAKEN') { markTaken(e.data.taken || []); updateSummary(); updateAvailability(); toast(e.data.message); go('seats'); }
+      else toast(e.message || 'Could not reserve your seats. Please try again.');
     }
   }
 
@@ -702,8 +724,58 @@
     </article>`;
   }
 
-  const STATUS = { 'paid-demo': 'Paid (demo)', paid: 'Paid', cash: 'Paid at office', pending: 'Confirming payment…', paid_conflict: 'Paid: needs staff check', chargedback: 'Charged back', cancelled: 'Cancelled', failed: 'Failed', expired: 'Expired' };
-  function statusLabel(b) { return STATUS[b.status] || b.status; }
+  const STATUS = { 'paid-demo': 'Paid (demo)', paid: 'Paid', cash: 'Paid at office', pending: 'Confirming payment…', paid_conflict: 'Paid: needs staff check', chargedback: 'Charged back', cancelled: 'Cancelled', failed: 'Failed', expired: 'Expired', awaiting_transfer: 'Waiting for bank transfer', rejected: 'Not approved' };
+  function statusLabel(b) {
+    if (b.status === 'awaiting_transfer') return b.slipAt ? 'Slip received · checking' : 'Waiting for bank transfer';
+    if (b.status === 'paid' && b.channel === 'bank') return 'Paid · bank transfer';
+    return STATUS[b.status] || b.status;
+  }
+  const timeLeft = iso => {
+    const ms = new Date(iso) - Date.now(); if (ms <= 0) return 'time is up';
+    const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+    return h ? `${h}h ${m}m left` : `${m} min left`;
+  };
+
+  /* the bank-transfer box on My Tickets: steps, bank details with copy buttons, slip upload */
+  function bankBox(b) {
+    const bank = Backend.bank || {};
+    const cp = (v, label) => `<button class="copy-chip" type="button" data-copy="${esc(String(v).replace(/\s/g, ''))}" aria-label="Copy ${label}"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>Copy</button>`;
+    if (b.status === 'rejected') return `
+      <div class="bk-wait warn"><div><b>This booking was not approved</b>
+        <p>${esc(b.reviewNote || 'The school could not find your transfer.')} The seats have been released. If you did transfer the money, please email
+        <a href="mailto:sunico2023@gmail.com">sunico2023@gmail.com</a> with your booking number <b>${b.ref}</b> and slip.</p></div></div>`;
+    const slipped = !!b.slipAt;
+    const deadline = new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    return `
+    <div class="bank-box">
+      <ol class="bank-steps">
+        <li class="done"><i>1</i><span>Seats held</span></li>
+        <li class="${slipped ? 'done' : 'now'}"><i>2</i><span>Transfer &amp; send slip</span></li>
+        <li class="${slipped ? 'now' : ''}"><i>3</i><span>School confirms</span></li>
+        <li><i>4</i><span>Tickets ready</span></li>
+      </ol>
+      ${bank.sample ? `<p class="bank-sample">⚠️ TEST MODE: these are <b>sample</b> bank details. Do <b>not</b> transfer any money yet.</p>` : ''}
+      ${slipped ? `
+        <div class="bank-done"><span class="spin"></span><div><b>Slip received, thank you!</b>
+          <p>The school will check the payment in its bank account and confirm your booking, usually within a day. Your tickets will appear here, and we'll email them to <b>${esc(b.customer.email || '')}</b>.</p></div></div>`
+      : `
+        <p class="bank-lead">Transfer <b>exactly ${rs(b.amount)}</b> to the school account below and write your booking number in the remarks.
+          Seats ${b.tickets.map(t => t.seat).join(', ')} are held until <b>${deadline}</b> <span class="bank-left">(${timeLeft(b.expiresAt)})</span>.</p>`}
+      <dl class="bank-details">
+        <div class="hl"><dt>Amount</dt><dd>${rs(b.amount)}</dd>${cp(b.amount, 'amount')}</div>
+        <div class="hl"><dt>Remarks / reference</dt><dd class="mono">${b.ref}</dd>${cp(b.ref, 'reference')}</div>
+        <div><dt>Bank</dt><dd>${esc(bank.bank || '')}${bank.branch ? ` · ${esc(bank.branch)}` : ''}</dd></div>
+        <div><dt>Account name</dt><dd>${esc(bank.accountName || '')}</dd>${cp(bank.accountName || '', 'account name')}</div>
+        <div><dt>Account number</dt><dd class="mono">${esc(bank.accountNo || '')}</dd>${cp(bank.accountNo || '', 'account number')}</div>
+      </dl>
+      <label class="btn ${slipped ? 'btn-ghost' : 'btn-gold'} btn-block slip-btn">
+        <input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
+        <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+        <span>${slipped ? 'Send a different slip' : 'Upload your transfer slip'}</span>
+      </label>
+      <p class="bank-note">A screenshot from your bank app or a photo of the bank slip is fine. Your tickets are issued only after the money reaches the school account, so a slip on its own is not enough.</p>
+    </div>`;
+  }
   const isValid = b => ['paid', 'paid-demo', 'cash'].includes(b.status);
 
   function renderTickets() {
@@ -711,7 +783,8 @@
     const mine = myRefs.map(r => bookings.find(b => b.ref === r)).filter(b => b && !['cancelled', 'failed', 'expired'].includes(b.status));
     const count = mine.filter(isValid).reduce((a, b) => a + b.tickets.length, 0);
     const waiting = mine.filter(b => b.status === 'pending').length;
-    $('#ticketsEmpty').hidden = count > 0 || waiting > 0;
+    const transfers = mine.filter(b => b.status === 'awaiting_transfer').length;
+    $('#ticketsEmpty').hidden = count > 0 || waiting > 0 || mine.length > 0;
     $('#ticketsActions').hidden = count === 0;
     $('#ticketsLead').hidden = count === 0;
     $('#navTicketCount').hidden = count === 0;
@@ -727,8 +800,8 @@
       div.innerHTML = `<div class="confirm">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>
         <div class="confirm-text">
-          <strong>${b.status === 'pending' ? `Payment received, ${esc(b.customer.first)}!` : `You're booked, ${esc(b.customer.first)}!`}</strong>
-          <p>${b.tickets.length} seat${b.tickets.length > 1 ? 's' : ''} · ${rs(b.amount)} · ${statusLabel(b)}. Take a screenshot of this booking number. You'll need it, with your phone number, to find your tickets again.</p>
+          <strong>${b.status === 'awaiting_transfer' ? `Seats held, ${esc(b.customer.first)}! Now transfer the money` : b.status === 'pending' ? `Payment received, ${esc(b.customer.first)}!` : `You're booked, ${esc(b.customer.first)}!`}</strong>
+          <p>${b.tickets.length} seat${b.tickets.length > 1 ? 's' : ''} · ${rs(b.amount)} · ${statusLabel(b)}. ${b.status === 'awaiting_transfer' ? 'Use this booking number as the remarks in your transfer. ' : ''}Take a screenshot of this booking number. You'll need it, with your phone number, to find your booking again.</p>
         </div>
         <div class="confirm-ref"><small>Booking number</small><b>${b.ref}</b><button class="btn btn-ghost btn-sm" data-copy="${b.ref}">Copy</button></div>
       </div>`;
@@ -740,9 +813,10 @@
       <section class="bk">
         <header class="bk-head">
           <div class="bk-ref"><small>Booking number</small><b>${b.ref}</b><button class="icon-btn" data-copy="${b.ref}" title="Copy booking number"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></div>
-          <div class="bk-meta"><span>${esc(fullName(b))}</span><span>${b.tickets.length} ticket${b.tickets.length > 1 ? 's' : ''}</span><span>${rs(b.amount)}</span><span class="ok">${statusLabel(b)}</span><span>${fmtDate(b.createdAt)}</span></div>
+          <div class="bk-meta"><span>${esc(fullName(b))}</span><span>${b.tickets.length || b.seatsCount || ''} ${b.tickets.length ? `ticket${b.tickets.length > 1 ? 's' : ''}` : ''}</span><span>${rs(b.amount)}</span><span class="${isValid(b) ? 'ok' : b.status === 'rejected' ? 'bad' : 'wait'}">${statusLabel(b)}</span><span>${fmtDate(b.createdAt)}</span></div>
         </header>
         ${isValid(b) ? `<div class="bk-tickets">${b.tickets.map(t => ticketHTML(b, t)).join('')}</div>`
+          : ['awaiting_transfer', 'rejected'].includes(b.status) ? bankBox(b)
           : b.status === 'pending' ? `<div class="bk-wait"><span class="spin"></span><div><b>Confirming your payment with PayHere…</b><p>Seats ${b.tickets.map(t => t.seat).join(', ')} are reserved for you. Your tickets will appear here automatically, usually within a minute.</p></div></div>`
           : `<div class="bk-wait warn"><div><b>${statusLabel(b)}</b><p>Your payment was received, but there's a problem with a seat. The school office will contact you on ${esc(b.customer.phone)}. Quote booking ${b.ref}.</p></div></div>`}
       </section>`).join('');
@@ -750,13 +824,30 @@
     clearTimeout(renderTickets._t);
     const stateOf = list => JSON.stringify(list.map(b => [b.ref, b.status, b.tickets.map(t => !!t.checkedInAt)]));
     const unused = mine.some(b => isValid(b) && b.tickets.some(t => !t.checkedInAt));
-    if (Backend.live && (waiting || unused)) renderTickets._t = setTimeout(async function poll() {
+    if (Backend.live && (waiting || unused || transfers)) renderTickets._t = setTimeout(async function poll() {
       if (location.hash !== '#tickets' || document.hidden) { renderTickets._t = setTimeout(poll, 15000); return; }
       const before = stateOf(bookings);
       bookings = await DB.all().catch(() => bookings);
       if (stateOf(bookings) !== before) renderTickets(); else renderTickets._t = setTimeout(poll, waiting ? 4000 : 15000);
     }, waiting ? 4000 : 15000);
+    $$('[data-slip]', box).forEach(inp => inp.addEventListener('change', () => sendSlip(inp)));
     $$('.ticket', box).forEach((tk, i) => { tk.style.animationDelay = (i * 0.1) + 's'; bindTicket(tk); });
+  }
+
+  async function sendSlip(inp) {
+    const file = inp.files[0]; if (!file) return;
+    const btn = inp.closest('.slip-btn'), lbl = btn.querySelector('span');
+    btn.classList.add('busy'); lbl.textContent = 'Uploading…';
+    try {
+      const b = await Backend.uploadSlip(inp.dataset.slip, file);
+      bookings = bookings.map(x => x.ref === b.ref ? b : x);
+      renderTickets();
+      toast('Slip received. The school will confirm your booking soon.');
+    } catch (e) {
+      btn.classList.remove('busy'); lbl.textContent = 'Upload your transfer slip';
+      toast(e.message || 'Could not upload the slip. Please try again.');
+    }
+    inp.value = '';
   }
 
   async function findBooking(e) {
@@ -781,6 +872,89 @@
   let staffOpen = sessionStorage.getItem('wv_staff') === '1';
   let adminQuery = '';
 
+  /* ---------- bank transfers waiting for staff ---------- */
+  let trTab = 'slip';
+  function renderTransfers(list) {
+    const card = $('#trCard');
+    card.hidden = !(Backend.live && Backend.methods.includes('bank'));
+    if (card.hidden) return;
+    const withSlip = list.filter(b => b.slipAt), noSlip = list.filter(b => !b.slipAt);
+    $('#trCount').textContent = list.length ? `${list.length} waiting` : '';
+    $$('#trCard [data-tr]').forEach(x => {
+      x.classList.toggle('on', x.dataset.tr === trTab);
+      x.textContent = (x.dataset.tr === 'slip' ? 'Slip sent' : 'No slip yet') + ` (${(x.dataset.tr === 'slip' ? withSlip : noSlip).length})`;
+    });
+    const rows = (trTab === 'slip' ? withSlip : noSlip).sort((a, b) => new Date(a.slipAt || a.createdAt) - new Date(b.slipAt || b.createdAt));
+    $('#trList').innerHTML = rows.length ? rows.map(b => `
+      <div class="tr-row" data-ref="${b.ref}">
+        <div class="tr-main">
+          <div class="tr-amt">${rs(b.amount)}</div>
+          <div class="tr-ref mono">${b.ref}</div>
+          <div class="tr-who">${esc(fullName(b))} · <a href="tel:${esc(b.customer.phone || '')}">${esc(b.customer.phone || '')}</a></div>
+          <div class="tr-seats">${b.tickets.map(t => `<span class="seat-tag ${t.tier}">${t.seat}</span>`).join('')}</div>
+          <div class="tr-time">${b.slipAt ? `Slip sent ${fmtDate(b.slipAt)}` : `Booked ${fmtDate(b.createdAt)} · ${timeLeft(b.expiresAt)}`}</div>
+        </div>
+        <div class="tr-actions">
+          ${b.slipAt ? `<button class="btn btn-ghost btn-sm" data-act="slip" type="button">View slip</button>` : ''}
+          <button class="btn btn-gold btn-sm" data-act="approve" type="button">Approve</button>
+          <button class="btn btn-ghost btn-sm tr-reject" data-act="reject" type="button">Reject</button>
+        </div>
+        <div class="tr-confirm" hidden></div>
+      </div>`).join('')
+      : `<p class="tr-empty">${trTab === 'slip' ? 'No slips waiting. 🎉' : 'Nobody is waiting without a slip.'}</p>`;
+  }
+
+  async function transferAction(e) {
+    const tab = e.target.closest('[data-tr]');
+    if (tab) { trTab = tab.dataset.tr; renderTransfers(staffBookings.filter(b => b.status === 'awaiting_transfer')); return; }
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    const row = btn.closest('.tr-row'), ref = row.dataset.ref, b = staffBookings.find(x => x.ref === ref);
+    const box = row.querySelector('.tr-confirm');
+    const act = btn.dataset.act;
+    if (act === 'slip') return showSlip(b);
+    if (act === 'approve') {
+      box.innerHTML = `<p>Did <b>exactly ${rs(b.amount)}</b> with <b>${b.ref}</b> arrive in the school account?</p>
+        <input class="tr-note" placeholder="Note (optional), e.g. seen in BOC app 25/11" maxlength="200" />
+        <div><button class="btn btn-gold btn-sm" data-act="approve-yes" type="button">Yes, money received: issue tickets</button>
+        <button class="btn btn-ghost btn-sm" data-act="cancel" type="button">Not yet</button></div>`;
+      box.hidden = false; return;
+    }
+    if (act === 'reject') {
+      box.innerHTML = `<p>Reject <b>${b.ref}</b> and release seats ${b.tickets.map(t => t.seat).join(', ')}? The buyer will see your reason.</p>
+        <select class="tr-note"><option>Transfer not received</option><option>Amount does not match</option><option>Booking number missing from transfer: please contact the office</option><option>Duplicate booking</option></select>
+        <div><button class="btn btn-sm tr-reject-yes" data-act="reject-yes" type="button">Reject &amp; release seats</button>
+        <button class="btn btn-ghost btn-sm" data-act="cancel" type="button">Cancel</button></div>`;
+      box.hidden = false; return;
+    }
+    if (act === 'cancel') { box.hidden = true; return; }
+    const note = box.querySelector('.tr-note')?.value || '';
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (act === 'approve-yes') {
+        const nb = await DB.approveTransfer(ref, note);
+        toast(`<b>${ref}</b> approved. ${nb.emailResult === 'sent' ? 'Tickets emailed to the buyer.' : 'Tickets are ready on their booking page.'}`);
+      } else {
+        await DB.rejectTransfer(ref, note);
+        toast(`<b>${ref}</b> rejected. Seats released.`);
+      }
+      renderAdmin();
+    } catch (err) {
+      toast(err.message || 'Could not save. Try again.');
+      btn.disabled = false; btn.textContent = act === 'approve-yes' ? 'Yes, money received: issue tickets' : 'Reject & release seats';
+    }
+  }
+
+  async function showSlip(b) {
+    const m = $('#slipModal'), view = $('#slipView');
+    $('#slipTitle').textContent = `${b.ref} · ${rs(b.amount)} · ${fullName(b)}`;
+    view.innerHTML = '<p class="tr-empty">Loading slip…</p>'; m.hidden = false;
+    try {
+      const { url, pdf } = await DB.slipLink(b.ref);
+      $('#slipOpen').href = url;
+      view.innerHTML = pdf ? `<iframe src="${url}" title="Slip PDF"></iframe>` : `<img src="${url}" alt="Transfer slip" />`;
+    } catch (e) { view.innerHTML = `<p class="tr-empty">${esc(e.message || 'Could not open the slip.')}</p>`; }
+  }
+
   function staffLock() {
     staffOpen = false; sessionStorage.removeItem('wv_staff'); Backend.staffLogout(); stopScan(); renderAdmin(false);
   }
@@ -800,7 +974,9 @@
     }
     const valid = staffBookings.filter(isValid);
     const tickets = valid.flatMap(b => b.tickets);
-    const online = valid.filter(b => b.status !== 'cash').reduce((a, b) => a + b.amount, 0);
+    const online = valid.filter(b => b.status !== 'cash' && b.channel !== 'bank').reduce((a, b) => a + b.amount, 0);
+    const bankIn = valid.filter(b => b.channel === 'bank').reduce((a, b) => a + b.amount, 0);
+    const trWaiting = staffBookings.filter(b => b.status === 'awaiting_transfer');
     const office = valid.filter(b => b.status === 'cash').reduce((a, b) => a + b.amount, 0);
     const inside = tickets.filter(t => t.checkedInAt).length;
     const issues = staffBookings.filter(b => ['paid_conflict', 'chargedback'].includes(b.status)).length;
@@ -808,10 +984,13 @@
     seats.forEach(s => { if (!s.taken) left[s.tier]++; });
     $('#stats').innerHTML = `
       <div><small>Tickets sold</small><b>${tickets.length}</b>${issues ? `<small class="warn-txt">${issues} need attention</small>` : ''}</div>
-      <div><small>Online (PayHere)</small><b>${rs(online)}</b>${Backend.config ? `<small>limit ${rs(Backend.config.monthlyCap)} / month</small>` : ''}</div>
+      ${Backend.methods.includes('payhere') ? `<div><small>Online (PayHere)</small><b>${rs(online)}</b><small>limit ${rs(Backend.config.monthlyCap)} / month</small></div>` : ''}
+      ${Backend.live && Backend.methods.includes('bank') ? `<div><small>Bank transfers</small><b>${rs(bankIn)}</b><small class="${trWaiting.length ? 'warn-txt' : ''}">${trWaiting.length} waiting to confirm</small></div>` : ''}
       <div><small>At the office</small><b>${rs(office)}</b></div>
       <div><small>Checked in</small><b>${inside} <em>/ ${tickets.length}</em></b></div>
       <div><small>Seats left</small><b class="left"><span class="v">${left.vip}<i>VIP</i></span><span class="g">${left.gold}<i>Gold</i></span><span class="s">${left.silver}<i>Silver</i></span><span class="b">${left.bronze}<i>Bronze</i></span></b></div>`;
+
+    renderTransfers(trWaiting);
 
     const q = adminQuery.toLowerCase().replace(/\s+/g, '');
     const rows = staffBookings.filter(b => !q || [b.ref, fullName(b), b.customer.phone, b.customer.email, b.customer.student, b.paymentId, ...b.tickets.map(t => t.seat)]
@@ -820,7 +999,7 @@
     $('#bkBody').innerHTML = rows.length ? rows.map(b => {
       const ins = b.tickets.filter(t => t.checkedInAt).length;
       return `<tr class="bk-row" data-ref="${b.ref}">
-        <td class="mono c-ref">${b.ref}${b.paymentId ? `<small>PayHere ${esc(b.paymentId)}</small>` : ''}</td>
+        <td class="mono c-ref">${b.ref}${b.paymentId ? `<small>PayHere ${esc(b.paymentId)}</small>` : b.channel === 'bank' ? `<small>Bank transfer</small>` : ''}</td>
         <td class="c-name">${esc(fullName(b))}<small>${esc(b.customer.role || '')}${b.customer.student ? ' · ' + esc(b.customer.student) : ''}</small></td>
         <td class="c-contact">${esc(b.customer.phone || '')}<small>${esc(b.customer.email || '')}</small></td>
         <td class="c-seats">${b.tickets.map(t => `<span class="seat-tag ${t.tier}${t.checkedInAt ? ' in' : ''}">${t.seat}</span>`).join('')}</td>
@@ -952,13 +1131,16 @@
     $('#pinForm').addEventListener('submit', async e => {
       e.preventDefault();
       const pin = $('#pinInput').value;
-      const ok = Backend.live ? await Backend.staffLogin(pin) : pin === STAFF_PIN;
-      if (ok) { staffOpen = true; if (!Backend.live) sessionStorage.setItem('wv_staff', '1'); $('#pinInput').value = ''; renderAdmin(); }
-      else { $('#pinInput').classList.add('bad'); toast('Wrong PIN.'); }
+      const ok = Backend.live ? await Backend.staffLogin(pin) : (pin === STAFF_PIN || 'Wrong PIN.');
+      if (ok === true) { staffOpen = true; if (!Backend.live) sessionStorage.setItem('wv_staff', '1'); $('#pinInput').value = ''; renderAdmin(); }
+      else { $('#pinInput').classList.add('bad'); toast(ok); }
     });
     $('#cashForm').addEventListener('submit', recordCashSale);
     $('#pinInput').addEventListener('input', e => e.target.classList.remove('bad'));
     $('#lockBtn').onclick = () => staffLock();
+    $('#trCard').addEventListener('click', transferAction);
+    $('#slipClose').onclick = () => { $('#slipModal').hidden = true; $('#slipView').innerHTML = ''; };
+    $('#slipModal').addEventListener('click', e => { if (e.target.id === 'slipModal') $('#slipClose').click(); });
 
     /* auto sign-out: 10 minutes with no taps, typing or scrolling → lock and go Home */
     const IDLE_MS = 10 * 60 * 1000;
@@ -1244,18 +1426,29 @@
      ========================================================= */
   // small labels so nobody mistakes test mode for the real thing
   function applyModeUI() {
-    const badge = $('.pay-option .badge'), note = $('#payNote');
-    if (Backend.live && Backend.sandbox) {
-      badge.textContent = 'Test mode';
-      note.innerHTML = '<b>Test mode (PayHere sandbox):</b> use a PayHere test card. No real money is taken.';
-      document.body.insertAdjacentHTML('beforeend', '<div class="mode-banner">TEST MODE · payments are not real</div>');
-    } else if (Backend.live) {
-      badge.hidden = true;
-      note.innerHTML = 'You will pay on PayHere\'s secure page. Your tickets appear here as soon as the payment is confirmed.';
-    } else {
-      badge.textContent = 'Demo';
-      note.innerHTML = 'Payments are not connected on this copy of the site. The pay button runs a <b>demo</b> so you can see the whole flow.';
-    }
+    const box = $('#payOptions'), note = $('#payNote');
+    const OPT = {
+      bank: ['Bank transfer', 'No fees. We hold your seats, you transfer to the school account with your booking number, and your tickets are issued once the school confirms the payment.', '<svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg>'],
+      payhere: ['Card / mobile wallet (PayHere)', 'Pay by card, eZ Cash, mCash or Genie on PayHere\'s secure page. Tickets straight away.', '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>'],
+    };
+    const methods = Backend.live ? Backend.methods : ['payhere'];
+    box.innerHTML = methods.map((m, i) => `
+      <label class="pay-option${i === 0 ? ' selected' : ''}">
+        <input type="radio" name="method" value="${m}" ${i === 0 ? 'checked' : ''} hidden />
+        <div class="radio"></div><span class="po-ic">${OPT[m][2]}</span>
+        <div><strong>${OPT[m][0]}</strong><p>${OPT[m][1]}</p></div>
+        ${!Backend.live ? '<span class="badge">Demo</span>' : ''}
+      </label>`).join('');
+    box.addEventListener('change', () => {
+      $$('.pay-option', box).forEach(o => o.classList.toggle('selected', o.querySelector('input').checked));
+      renderCheckout();
+    });
+    if (!Backend.live) note.innerHTML = 'Payments are not connected on this copy of the site. The button runs a <b>demo</b> so you can see the whole flow.';
+    else if (methods.includes('bank') && Backend.bank?.sample) note.innerHTML = '<b>Test mode:</b> the school\'s real bank details are not added yet, so you will see <b>sample</b> details. Please don\'t transfer any money.';
+    else if (methods[0] === 'bank') note.innerHTML = 'After you reserve, you\'ll see the school\'s bank details and your booking number. Seats are held for ' + (Backend.config.bankHoldHours || 24) + ' hours.';
+    else note.innerHTML = Backend.sandbox ? '<b>Test mode (PayHere sandbox):</b> use a PayHere test card. No real money is taken.' : 'You will pay on PayHere\'s secure page.';
+    if (Backend.live && Backend.testMode)
+      document.body.insertAdjacentHTML('beforeend', `<div class="mode-banner">TEST MODE · ${methods.includes('bank') && Backend.bank?.sample ? "sample bank details, don't transfer money" : 'payments are not real'}</div>`);
   }
 
   async function init() {

@@ -12,6 +12,6 @@ export default async (req) => {
   catch (e) { return json({ state: 'error', message: 'Could not check the ticket right now. Try again.' }, 503); }
   if (!v) return json({ state: 'invalid', message: 'This ticket no longer exists (the booking was cancelled).' }, 404);
   const state = ['paid', 'cash'].includes(v.status) ? (v.checkedInAt ? 'used' : 'valid')
-    : v.status === 'pending' ? 'pending' : v.status === 'paid_conflict' ? 'office' : 'void';
+    : ['pending', 'awaiting_transfer'].includes(v.status) ? 'pending' : v.status === 'paid_conflict' ? 'office' : 'void';
   return json({ state, ticket: v });
 };

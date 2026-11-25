@@ -1,49 +1,76 @@
-// POST /.netlify/functions/staff   header: x-staff-pin
-// { action:'list' } | { action:'checkin', ticketId } | { action:'undo', ticketId } | { action:'cash', seats, customer }
-import { timingSafeEqual } from 'node:crypto';
-import { json, fail, readBody, env, newRef, newKey } from '../lib/http.mjs';
+// POST /.netlify/functions/staff
+//   sign in:  { action:'login', pin }                 -> { pass }   (pass goes in the x-staff-pass header after that)
+//   then:     { action:'list' } | { action:'checkin', ticketId } | { action:'undo', ticketId }
+//             { action:'cash', seats, customer } | { action:'email', ref }
+//             { action:'slip', ref } | { action:'approve', ref, note } | { action:'reject', ref, note }
+import { json, fail, readBody, newRef, newKey, clientIp } from '../lib/http.mjs';
 import { seatInfo } from '../lib/hall.mjs';
 import { rpc } from '../lib/supabase.mjs';
 import { addVerify, siteOrigin } from '../lib/tickets.mjs';
 import { sendConfirmation } from '../lib/email.mjs';
+import { slipLink } from '../lib/storage.mjs';
+import { tryPin, makePass, passOk, pinStrongEnough } from '../lib/staffauth.mjs';
+import { clean } from '../lib/order.mjs';
 
-const pinOk = given => {
-  const pin = env('STAFF_PIN');
-  if (!pin || pin.length < 6) return false;              // refuse weak / missing PINs
-  const a = Buffer.from(String(given || '')), b = Buffer.from(pin);
-  return a.length === b.length && timingSafeEqual(a, b);
-};
+const refOf = v => String(v || '').toUpperCase().trim().slice(0, 20);
+const mail = (ref, req) => sendConfirmation(ref, siteOrigin(req)).catch(e => (console.error('[email]', e.message), 'failed'));
 
 export default async (req) => {
   if (req.method !== 'POST') return fail('METHOD', 'Use POST', 405);
-  if (!pinOk(req.headers.get('x-staff-pin'))) {
-    await new Promise(r => setTimeout(r, 800));            // slow down PIN guessing
-    return fail('PIN', 'Wrong staff PIN.', 401);
-  }
   const body = await readBody(req).catch(() => ({}));
+
+  if (body.action === 'login') {
+    if (!pinStrongEnough()) return fail('PIN_SETUP', 'The staff PIN is not set up safely yet (it needs at least 6 digits).', 503);
+    const r = await tryPin(body.pin, clientIp(req));
+    if (!r.ok) {
+      await new Promise(res => setTimeout(res, 700));                     // slow down guessing
+      return r.locked ? fail('LOCKED', `Too many wrong PINs. Try again in ${r.locked} minute${r.locked > 1 ? 's' : ''}.`, 429)
+                      : fail('PIN', 'Wrong staff PIN.', 401);
+    }
+    return json({ pass: makePass() });
+  }
+  if (!passOk(req.headers.get('x-staff-pass'))) return fail('SIGNED_OUT', 'Please sign in again with the staff PIN.', 401);
+
   try {
     switch (body.action) {
-      case 'login':   return json({ ok: true });
       case 'list':    return json({ bookings: (await rpc('wv_staff_bookings')).map(b => addVerify(b, siteOrigin(req))) });
-      case 'email':   return json({ result: await sendConfirmation(String(body.ref || ''), siteOrigin(req), { force: true }) });
-      case 'checkin': return json(await rpc('wv_check_in', { p_ticket_id: String(body.ticketId || '') }));
-      case 'undo':    return json({ booking: await rpc('wv_undo_check_in', { p_ticket_id: String(body.ticketId || '') }) });
+      case 'email':   return json({ result: await sendConfirmation(refOf(body.ref), siteOrigin(req), { force: true }) });
+      case 'checkin': return json(await rpc('wv_check_in', { p_ticket_id: String(body.ticketId || '').slice(0, 30) }));
+      case 'undo':    return json({ booking: await rpc('wv_undo_check_in', { p_ticket_id: String(body.ticketId || '').slice(0, 30) }) });
+
+      // ---- bank transfers ----
+      case 'slip': {
+        const path = await rpc('wv_slip_path', { p_ref: refOf(body.ref) });
+        if (!path) return fail('NO_SLIP', 'No slip uploaded for this booking.', 404);
+        return json({ url: await slipLink(path), pdf: path.endsWith('.pdf') });
+      }
+      case 'approve': {
+        const booking = await rpc('wv_approve_transfer', { p_ref: refOf(body.ref), p_note: clean(body.note, 200) });
+        const email = booking.customer?.email ? await mail(booking.ref, req) : 'no-email';
+        return json({ booking: addVerify(booking, siteOrigin(req)), email });
+      }
+      case 'reject':
+        return json({ booking: await rpc('wv_reject_transfer', { p_ref: refOf(body.ref), p_note: clean(body.note, 200) }) });
+
       case 'cash': {
-        const seats = [...new Set(body.seats || [])].map(seatInfo);
+        const seats = [...new Set(body.seats || [])].slice(0, 20).map(seatInfo);
         if (!seats.length || seats.some(s => !s)) return fail('BAD_SEAT', 'Check the seat numbers.');
         const c = body.customer || {};
-        const customer = { first: String(c.first || 'Office').slice(0, 40), last: String(c.last || 'sale').slice(0, 40),
-          phone: String(c.phone || '').slice(0, 20), email: String(c.email || '').slice(0, 120), role: 'Cash sale', student: String(c.student || '').slice(0, 80) };
+        const customer = { first: clean(c.first, 40) || 'Office', last: clean(c.last, 40) || 'sale',
+          phone: clean(c.phone, 20), email: clean(c.email, 120), role: 'Cash sale', student: clean(c.student, 80) };
         const booking = await rpc('wv_record_cash_sale', { p_ref: newRef(), p_access_key: newKey(),
           p_amount: seats.reduce((a, s) => a + s.price, 0), p_seats: seats, p_customer: customer });
-        let email = 'no-email';
-        if (customer.email) email = await sendConfirmation(booking.ref, siteOrigin(req)).catch(e => (console.error('[email]', e.message), 'failed'));
+        const email = customer.email ? await mail(booking.ref, req) : 'no-email';
         return json({ booking: addVerify(booking, siteOrigin(req)), email });
       }
       default: return fail('ACTION', 'Unknown action');
     }
   } catch (e) {
-    if (e.message.startsWith('SEAT_TAKEN:')) return json({ error: 'SEAT_TAKEN', message: `Already sold: ${e.message.split(':')[1]}` }, 409);
-    return fail('DB', e.message, e.status || 500);
+    const m = e.message || '';
+    if (m.startsWith('SEAT_TAKEN:')) return json({ error: 'SEAT_TAKEN', message: `Already sold to someone else: ${m.split(':')[1]}. Contact the buyer to choose other seats or refund.` }, 409);
+    if (m.startsWith('NOT_WAITING')) return fail('NOT_WAITING', 'This booking is not waiting for a transfer any more (it may already be approved or rejected).', 409);
+    if (m.startsWith('NO_BOOKING')) return fail('NO_BOOKING', 'Booking not found.', 404);
+    console.error('[staff]', m);
+    return fail('DB', 'Something went wrong. Please try again.', e.status || 500);
   }
 };

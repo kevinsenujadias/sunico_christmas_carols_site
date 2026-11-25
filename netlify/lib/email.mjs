@@ -39,7 +39,7 @@ export function buildEmail(b, origin) {
           <td align="right" style="padding:14px 18px;font-family:'Courier New',monospace;color:#fff;font-size:22px;font-weight:bold;letter-spacing:2px">${esc(b.ref)}</td>
         </tr></table>
         <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#5a4a3a;margin-top:12px;line-height:1.7">
-          📅 <b>Friday, 18 December 2026</b> · from <b>4:30 PM</b><br>📍 <b>Namal Hall</b><br>💳 Total paid: <b>${rs(b.amount)}</b>${b.payment_id ? ` · PayHere ref ${esc(b.payment_id)}` : b.status === 'cash' ? ' · paid at the school office' : ''}
+          📅 <b>Friday, 18 December 2026</b> · from <b>4:30 PM</b><br>📍 <b>Namal Hall</b><br>💳 Total paid: <b>${rs(b.amount)}</b>${b.payment_id ? ` · PayHere ref ${esc(b.payment_id)}` : b.status === 'cash' ? ' · paid at the school office' : b.channel === 'bank' ? ' · bank transfer received' : ''}
         </div>
       </td></tr>
       <tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>

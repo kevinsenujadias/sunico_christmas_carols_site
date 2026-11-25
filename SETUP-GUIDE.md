@@ -1,4 +1,51 @@
-# Winter Vespers – switching on real payments (PayHere Lite)
+# Winter Vespers – setup guide
+
+> **Payments now use BANK TRANSFER** (see the next section). PayHere is switched off and only comes back if
+> `PAYMENT_METHODS` is set to `payhere` or `bank,payhere`. The PayHere steps further down are kept for that case.
+
+## Bank transfer: how it works
+
+1. The buyer picks seats → **Reserve seats**. The seats turn red for everyone and are held for **24 hours** (`BANK_HOLD_HOURS`).
+2. My Tickets shows the school's bank details, the **exact amount** and the **booking number** (e.g. `WV-7K3QX9`) to write in the transfer remarks, with copy buttons.
+3. The buyer transfers and uploads a photo/PDF of the slip. Slips go to a **private** Supabase Storage bucket (`slips`).
+4. Staff open **Staff check-in → Bank transfers to confirm**, check the school bank app for that amount + booking number, and press **Approve**.
+   The tickets (with QR codes) appear on the buyer's phone and are emailed (if Brevo is set up).
+5. **Reject** (with a reason) releases the seats. No slip after 24 hours → seats released automatically.
+   A slip was sent → seats stay held until staff approve or reject. Late money can still be approved if the seats are free.
+6. Limits against seat-hoarding: max 2 unpaid transfers per phone/email, 6 per internet address, 10 seats per booking.
+
+### Netlify variables for bank transfer
+
+| Variable | Example | Secret? |
+|---|---|---|
+| `BANK_NAME` | `Bank of Ceylon` | no |
+| `BANK_BRANCH` | `Negombo` | no |
+| `BANK_ACCOUNT_NAME` | `SUNICO (Pvt) Ltd` | no |
+| `BANK_ACCOUNT_NO` | `0001234567` | no (shown to every buyer) |
+| `BANK_HOLD_HOURS` | `24` (optional) | no |
+| `PAYMENT_METHODS` | `bank` (default) | no |
+| `STAFF_SESSION_HOURS` | `12` (optional) | no |
+
+Until the four `BANK_*` details are added, the site shows **sample** bank details and a red
+"TEST MODE · don't transfer money" banner, so nobody pays into a wrong account.
+
+### After pulling this version: run the database file again
+Supabase → SQL Editor → paste all of `supabase/schema.sql` → Run. It adds the bank-transfer parts and the
+private `slips` bucket, and keeps all existing bookings. Safe to run more than once.
+
+### Security already built in
+- Prices are calculated on the server; a buyer can't change the amount.
+- Every QR is signed with `TICKET_SECRET`; fake or edited QRs show NOT VALID; each ticket scans once.
+- Staff sign in with the PIN once and get a pass that expires (12 h). The PIN is never stored on the phone.
+  8 wrong PINs from one connection lock it for 15 minutes. Changing `STAFF_PIN` signs everyone out.
+- The staff page locks itself after 10 minutes without use.
+- Slips: only real images/PDFs under 3 MB are accepted; staff see them through 10-minute links.
+- Strict browser security headers (netlify.toml): only the site's own scripts can run.
+- Database tables are locked: only the server (secret key) can read or change them.
+
+---
+
+# Switching on card payments (PayHere), only if ever needed
 
 The website already works in **demo mode**. These steps switch on **real bookings + PayHere**.
 Do them in order. Total time: about an hour, plus waiting up to 24 h for PayHere to approve your domain.

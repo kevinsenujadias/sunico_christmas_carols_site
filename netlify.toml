@@ -24,3 +24,22 @@
   to = "/404.html"
   status = 404
   force = true
+
+# ---------- security headers on every page ----------
+# CSP: the site may only load its own files (+ PayHere if card payments are ever switched on,
+# + Supabase for staff viewing payment slips). Blocks injected scripts, other sites framing us, etc.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://www.payhere.lk https://sandbox.payhere.lk; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.payhere.lk; frame-src https://*.payhere.lk https://*.supabase.co; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://*.payhere.lk; frame-ancestors 'none'; upgrade-insecure-requests"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=(self)"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# the server parts and the staff page should never be cached
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store"

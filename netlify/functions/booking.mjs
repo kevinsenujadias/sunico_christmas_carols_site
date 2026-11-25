@@ -19,7 +19,7 @@ export default async (req) => {
     const { ref, phone } = body;
     if (!ref || String(phone || '').replace(/\D/g, '').length < 7) return fail('BAD_INPUT', 'Enter your booking number and phone.');
     const b = await rpc('wv_lookup_booking', { p_ref: String(ref), p_phone_tail: String(phone) });
-    if (!b) return fail('NOT_FOUND', "We couldn't find a paid booking with that number and phone.", 404);
+    if (!b) return fail('NOT_FOUND', "We couldn't find a booking with that number and phone.", 404);
     const { access_key, ...booking } = b;
     return json({ booking: addVerify(booking, siteOrigin(req)), accessKey: access_key });
   } catch (e) { return fail('DB', e.message, e.status || 500); }
