@@ -1406,3 +1406,48 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
 .pay-safe>span{flex:1;min-width:0}
 .pay-page,.pay-grid,.pay-card,.pay-main,.pay-side{min-width:0}
 .pay-ref>div>b{word-break:break-all}
+
+/* =========================================================
+   PAY PAGE v2: one column, glanceable
+   ========================================================= */
+.px{max-width:540px;margin:0 auto;display:grid;gap:.9rem}
+.px-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
+.px-steps span{display:flex;align-items:center;justify-content:center;gap:.45rem;padding:.55rem .4rem;border-radius:99px;font-size:.85rem;font-weight:600;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.px-steps i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.75rem;font-weight:800;background:var(--line-2);color:var(--text)}
+.px-steps .done{color:#7ee2a8;border-color:rgba(47,209,122,.4)}.px-steps .done i{background:#2fd17a;color:#062012}
+.px-steps .now{color:#1a1204;background:linear-gradient(135deg,#f6dc93,#e7bd5a);border-color:transparent}.px-steps .now i{background:#1a1204;color:#f6dc93}
+.px-card{padding:1rem;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));border:1px solid var(--line-2);display:grid;gap:.5rem}
+.px-total{display:flex;align-items:center;gap:.8rem;padding:.3rem .3rem .7rem;border-bottom:1px solid var(--line)}
+.px-total small{display:none}
+.px-total b{flex:1;font-family:var(--f-serif);font-size:clamp(2.1rem,8vw,2.7rem);color:var(--gold-2);line-height:1}
+.px-row{display:flex;align-items:center;gap:.7rem;padding:.7rem .8rem;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+.px-row>div{flex:1;min-width:0;display:grid;gap:.1rem}
+.px-row small{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.px-row b{font-size:1.05rem;word-break:break-word}
+.px-row .mono{letter-spacing:.06em;font-size:1.15rem}
+.px-hl{border-color:rgba(169,112,255,.6);background:rgba(169,112,255,.12)}
+.px-ref{color:#e5d4ff;font-size:1.3rem!important}
+.px-row .copy-chip,.px-total .copy-chip{flex:none;padding:.55rem .9rem;font-size:.85rem}
+.px-copyall{padding:.7rem;border-radius:14px;border:1px dashed var(--line-2);color:var(--muted);font-weight:600;font-size:.9rem}
+.px-copyall:hover,.px-copyall.copied{border-color:var(--gold);color:var(--gold-2)}
+.px-upload{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:1.1rem;border-radius:18px;cursor:pointer;
+  background:linear-gradient(135deg,#f6dc93,#e7bd5a);color:#1a1204;font-size:1.1rem;box-shadow:0 12px 30px -12px rgba(231,189,90,.7);transition:transform .15s}
+.px-upload:active{transform:scale(.98)}
+.px-upload svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4}
+.px-upload.ghost{background:none;border:1px solid var(--line-2);color:var(--text);box-shadow:none;font-size:.95rem;padding:.8rem}
+.px-upload.busy{opacity:.6;pointer-events:none}
+.px-hold{text-align:center;font-size:.88rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;align-items:center}
+.px-later{justify-self:center;color:var(--muted);font-size:.9rem;text-decoration:underline;padding:.3rem}
+.px-ok{text-align:center;justify-items:center;border-color:rgba(47,209,122,.45);background:rgba(47,209,122,.07);gap:.6rem;padding:1.3rem}
+.px-ok h3{font-family:var(--f-serif);font-size:1.7rem}
+.px-ok p{color:var(--muted)}
+.px-big-tick{width:56px;height:56px;border-radius:50%;background:#2fd17a;display:grid;place-items:center;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+.px-big-tick svg{width:32px;height:32px;fill:none;stroke:#062012;stroke-width:3}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.px-help{border-radius:14px;border:1px solid var(--line);padding:.2rem .9rem}
+.px-help summary{cursor:pointer;padding:.6rem 0;color:var(--muted);font-weight:600;font-size:.9rem}
+.px-help ol{padding-left:1.2rem;display:grid;gap:.3rem;color:var(--muted);font-size:.88rem;margin-bottom:.6rem}
+.px-help p{font-size:.82rem;color:var(--dim);padding-bottom:.8rem}
+#view-pay .page-head{text-align:center}
+#view-pay .page-head .steps{display:none}
+#view-pay .page-head h2{font-size:clamp(1.8rem,6vw,2.6rem)}

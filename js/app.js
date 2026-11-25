@@ -778,8 +778,8 @@
     const slipped = !!b.slipAt, rejected = b.status === 'rejected', expired = b.status === 'expired';
     $('#payLead').innerHTML = rejected ? 'This booking was not approved.'
       : expired ? 'The time to pay for this booking has run out.'
-      : slipped ? `Thank you, ${esc(b.customer.first)}! We've got your slip. The school will confirm your payment soon.`
-      : `${esc(b.customer.first)}, your seats are reserved. Transfer <b>${rs(b.amount)}</b> to the school's account below, then upload your slip.`;
+      : slipped ? 'Thank you! The school is checking your payment.'
+      : `Send <b>${rs(b.amount)}</b> to the school account, then upload the slip.`;
     const allText = `Bank: ${bank.bank}\nBranch: ${bank.branch}\nAccount name: ${bank.accountName}\nAccount number: ${bank.accountNo}\nAmount: ${b.amount}\nRemarks: ${b.ref}`;
 
     if (rejected || expired) {
@@ -791,66 +791,52 @@
       return;
     }
 
+    const row = (label, value, copyVal, cls = '') => `
+      <div class="px-row ${cls}"><div><small>${label}</small><b>${value}</b></div>${copyVal != null ? copyBtn(copyVal, label) : ''}</div>`;
     page.innerHTML = `
-      <div class="pay-grid">
-        <div class="pay-card pay-main">
-          <div class="pay-progress">
-            <span class="done">Seats reserved</span><span class="${slipped ? 'done' : 'now'}">Transfer &amp; upload slip</span><span class="${slipped ? 'now' : ''}">School confirms</span><span>Tickets ready</span>
-          </div>
-
-          <div class="pay-amount">
-            <small>Amount to transfer</small>
-            <div><b>${rs(b.amount)}</b>${copyBtn(b.amount, 'amount', true)}</div>
-            <span>Transfer the <b>exact</b> amount, so we can match it to your booking.</span>
-          </div>
-
-          <div class="pay-ref">
-            <small>Write this in the remarks / reference</small>
-            <div><b class="mono">${b.ref}</b>${copyBtn(b.ref, 'booking number', true)}</div>
-            <span>This is how the school knows the payment is yours. Don't leave it out.</span>
-          </div>
-
-          <h4 class="pay-h">School bank account</h4>
-          <dl class="pay-bank">
-            <div><dt>Bank</dt><dd>${esc(bank.bank)}</dd></div>
-            <div><dt>Branch</dt><dd>${esc(bank.branch)}</dd></div>
-            <div><dt>Account name</dt><dd>${esc(bank.accountName)}</dd>${copyBtn(bank.accountName, 'account name')}</div>
-            <div><dt>Account number</dt><dd class="mono acc">${esc(bank.accountNo)}</dd>${copyBtn(bank.accountNo, 'account number')}</div>
-          </dl>
-          <button class="btn btn-ghost btn-block" type="button" data-copy="${esc(allText)}">Copy all payment details</button>
-          <p class="pay-safe"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span>Only pay into <b>${esc(bank.accountName)}</b>, ${esc(bank.bank)}. The school will <b>never</b> ask you to pay into a different account by phone, SMS or WhatsApp.</span></p>
+      <div class="px">
+        <div class="px-steps">
+          <span class="done"><i>✓</i>Seats held</span>
+          <span class="${slipped ? 'done' : 'now'}"><i>${slipped ? '✓' : '2'}</i>Pay</span>
+          <span class="${slipped ? 'now' : ''}"><i>3</i>${slipped ? 'Checking' : 'Confirmed'}</span>
         </div>
 
-        <aside class="pay-side">
-          <div class="pay-card pay-timer">
-            <small>Seats held until</small>
-            <b>${deadlineTxt(b.expiresAt)}</b>
-            <span class="pay-left" data-until="${b.expiresAt}">${slipped ? 'Held while the school checks your slip' : timeLeft(b.expiresAt)}</span>
-            <div class="pay-seats">${b.tickets.map(t => `<span class="seat-tag ${t.tier}">${t.seat}</span>`).join('')}</div>
-          </div>
+        ${slipped ? `
+        <div class="px-card px-ok">
+          <span class="px-big-tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <h3>Slip received</h3>
+          <p>We'll check the payment and send your tickets to <b>${esc(b.customer.email || 'your email')}</b>.</p>
+          <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">My tickets</a>
+        </div>` : ''}
 
-          <div class="pay-card pay-upload${slipped ? ' ok' : ''}">
-            ${slipped ? `
-              <div class="pay-got"><span class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-                <div><b>Slip received</b><p>Sent ${fmtDate(b.slipAt)}. The school checks its bank account and confirms, usually within a day. Your tickets will appear in <b>My tickets</b> and be emailed to <b>${esc(b.customer.email || '')}</b>.</p></div></div>
-              <label class="btn btn-ghost btn-block slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden /><span>Send a different slip</span></label>`
-            : `
-              <h4>Done the transfer?</h4>
-              <p>Upload a screenshot from your banking app, or a photo of the bank slip.</p>
-              <label class="slip-drop slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
-                <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-                <b>Upload your slip</b><span>JPG, PNG or PDF</span></label>`}
-            <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">${slipped ? 'Go to My tickets' : "I'll pay later: go to My tickets"}</a>
-          </div>
+        <div class="px-card">
+          <div class="px-total"><small>Amount</small><b>${rs(b.amount)}</b>${copyBtn(b.amount, 'amount', true)}</div>
+          ${row('Remarks / reference', `<span class="mono px-ref">${b.ref}</span>`, b.ref, 'px-hl')}
+          ${row('Account number', `<span class="mono">${esc(bank.accountNo)}</span>`, bank.accountNo)}
+          ${row('Account name', esc(bank.accountName), bank.accountName)}
+          ${row('Bank', `${esc(bank.bank)} · ${esc(bank.branch)}`)}
+          <button class="px-copyall" type="button" data-copy="${esc(allText)}"><span>Copy all details</span></button>
+        </div>
 
-          <ol class="pay-how">
-            <li>Open your banking app (or go to any bank).</li>
-            <li>Transfer <b>${rs(b.amount)}</b> to the account shown.</li>
-            <li>Put <b>${b.ref}</b> in the remarks.</li>
-            <li>Upload the slip here. We'll email your tickets once it's confirmed.</li>
+        ${slipped ? `
+        <label class="px-upload ghost slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
+          <b>Send a different slip</b></label>` : `
+        <label class="px-upload slip-btn"><input type="file" accept="image/*,application/pdf" data-slip="${b.ref}" hidden />
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+          <b>Upload payment slip</b></label>
+        <p class="px-hold">Seats ${b.tickets.map(t => `<span class="seat-tag ${t.tier}">${t.seat}</span>`).join(' ')} held · <span class="pay-left" data-until="${b.expiresAt}">${timeLeft(b.expiresAt)}</span></p>
+        <a class="px-later" href="#tickets" data-go="tickets">Pay later</a>`}
+
+        <details class="px-help">
+          <summary>Need help?</summary>
+          <ol>
+            <li>Open your bank app (or visit any bank).</li>
+            <li>Send <b>${rs(b.amount)}</b> to the account above.</li>
+            <li>Type <b>${b.ref}</b> in the remarks.</li>
+            <li>Upload a screenshot of the transfer here.</li>
           </ol>
-        </aside>
+          <p>Only pay into <b>${esc(bank.accountName)}</b>. The school will never ask you to pay into another account by phone or WhatsApp.</p>
+        </details>
       </div>`;
     $$('[data-slip]', page).forEach(inp => inp.addEventListener('change', () => sendSlip(inp)));
     // live countdown + notice when the school approves
@@ -946,7 +932,7 @@
       location.hash === '#pay' ? renderPay() : renderTickets();
       toast('Slip received. The school will confirm your booking soon.');
     } catch (e) {
-      btn.classList.remove('busy'); lbl.textContent = 'Upload your slip';
+      btn.classList.remove('busy'); lbl.textContent = 'Upload payment slip';
       toast(e.message || 'Could not upload the slip. Please try again.');
     }
     inp.value = '';
