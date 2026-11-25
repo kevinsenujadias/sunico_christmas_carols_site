@@ -83,3 +83,42 @@ export async function sendConfirmation(ref, origin, { force = false } = {}) {
   await rpc('wv_mark_email_sent', { p_ref: ref });
   return 'sent';
 }
+
+/** "We got your slip, we're verifying it" email, sent when a buyer uploads a bank-transfer slip. */
+export async function sendSlipReceived(b, origin) {
+  if (!emailConfigured()) return 'not-configured';
+  const c = b.customer || {}, to = c.email;
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return 'no-email';
+  const link = `${origin}/?booking=${encodeURIComponent(b.ref)}&key=${encodeURIComponent(b.access_key)}#tickets`;
+  const seats = (b.tickets || []).map(t => t.seat).join(', ');
+  const html = `<!doctype html><html><body style="margin:0;background:#f4efe6">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4efe6;padding:24px 0"><tr><td align="center">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fffaf2;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#2b1d12">
+    <tr><td style="background:#0f1530;padding:26px;text-align:center"><div style="font-family:Georgia,serif;font-size:30px;color:#f6dc93;font-style:italic">Winter Vespers</div>
+      <div style="font-size:11px;letter-spacing:3px;color:#c9cfe4">SUNICO · CHRISTMAS CAROLS 2026</div></td></tr>
+    <tr><td style="padding:28px">
+      <div style="font-size:22px;font-weight:bold;margin-bottom:10px">Payment slip received, ${esc(c.first)}</div>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 16px">Thank you! We've received your bank transfer slip. Our team will <b>verify the payment</b> against your booking reference and <b>email your tickets</b> to you shortly.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6efe2;border-radius:10px;font-size:14px">
+        <tr><td style="padding:12px 16px;color:#8a7a68">Booking reference</td><td style="padding:12px 16px;font-weight:bold;font-family:monospace;font-size:16px">${esc(b.ref)}</td></tr>
+        <tr><td style="padding:0 16px 12px;color:#8a7a68">Amount</td><td style="padding:0 16px 12px;font-weight:bold">${rs(b.amount)}</td></tr>
+        <tr><td style="padding:0 16px 12px;color:#8a7a68">Seats</td><td style="padding:0 16px 12px;font-weight:bold">${esc(seats)}</td></tr>
+      </table>
+      <p style="font-size:14px;line-height:1.6;color:#6b5a48;margin:16px 0">Your seats are held for you while we check. You can see the status any time:</p>
+      <p style="text-align:center;margin:0 0 8px"><a href="${link}" style="display:inline-block;background:#e7bd5a;color:#1a1204;text-decoration:none;font-weight:bold;padding:13px 26px;border-radius:99px">View my booking</a></p>
+      <p style="font-size:12px;color:#8a7a68;margin-top:20px">Questions? Reply to this email or write to sunico2023@gmail.com with your booking reference.</p>
+    </td></tr></table></td></tr></table></body></html>`;
+  const text = `Payment slip received, ${c.first}!\n\nWe've received your bank transfer slip. Our team will verify the payment against your booking reference and email your tickets shortly.\n\nBooking reference: ${b.ref}\nAmount: ${rs(b.amount)}\nSeats: ${seats}\n\nView your booking: ${link}`;
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': env('BREVO_API_KEY'), 'Content-Type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({
+      sender: { name: env('EMAIL_FROM_NAME') || 'SUNICO Winter Vespers', email: env('EMAIL_FROM') },
+      to: [{ email: to, name: `${c.first || ''} ${c.last || ''}`.trim() }],
+      replyTo: { email: env('EMAIL_REPLY_TO') || 'sunico2023@gmail.com' },
+      subject: `Slip received · we're verifying your payment · ${b.ref}`, htmlContent: html, textContent: text, tags: ['winter-vespers', 'slip'],
+    }),
+  });
+  if (!res.ok) throw new Error(`EMAIL_FAILED ${res.status}`);
+  return 'sent';
+}

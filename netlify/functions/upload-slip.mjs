@@ -4,6 +4,8 @@
 import { json, fail, readBody } from '../lib/http.mjs';
 import { rpc } from '../lib/supabase.mjs';
 import { sniff, putSlip } from '../lib/storage.mjs';
+import { sendSlipReceived } from '../lib/email.mjs';
+import { siteOrigin } from '../lib/tickets.mjs';
 
 const MAX_BYTES = 3 * 1024 * 1024;   // 3 MB (the website shrinks photos before sending)
 
@@ -26,7 +28,10 @@ export default async (req) => {
     const path = `${ref}/${Date.now()}.${kind.ext}`;
     await putSlip(path, buf, kind.type);
     const booking = await rpc('wv_attach_slip', { p_ref: ref, p_access_key: key, p_path: path });
-    return json({ booking });
+    // first slip only: email "we got it, we're verifying" (a failed email never blocks the upload)
+    let email = 'skipped';
+    if (!b.slip_uploaded_at) email = await sendSlipReceived({ ...booking, access_key: key }, siteOrigin(req)).catch(e => (console.error('[slip-email]', e.message), 'failed'));
+    return json({ booking, email });
   } catch (e) {
     console.error('[upload-slip]', e.message);
     if (e.message.startsWith('NOT_WAITING')) return fail('NOT_WAITING', 'This booking is no longer waiting for a transfer.', 409);

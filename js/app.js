@@ -778,7 +778,7 @@
     const slipped = !!b.slipAt, rejected = b.status === 'rejected', expired = b.status === 'expired';
     $('#payLead').innerHTML = rejected ? 'This booking was not approved.'
       : expired ? 'The time to pay for this booking has run out.'
-      : slipped ? 'Thank you! The school is checking your payment.'
+      : slipped ? 'Thank you! We\'ll email your tickets once it\'s verified.'
       : `Send <b>${rs(b.amount)}</b> to the school account, then upload the slip.`;
     const allText = `Bank: ${bank.bank}\nBranch: ${bank.branch}\nAccount name: ${bank.accountName}\nAccount number: ${bank.accountNo}\nAmount: ${b.amount}\nRemarks: ${b.ref}`;
 
@@ -798,14 +798,15 @@
         <div class="px-steps">
           <span class="done"><i>✓</i>Seats held</span>
           <span class="${slipped ? 'done' : 'now'}"><i>${slipped ? '✓' : '2'}</i>Pay</span>
-          <span class="${slipped ? 'now' : ''}"><i>3</i>${slipped ? 'Checking' : 'Confirmed'}</span>
+          <span class="${slipped ? 'now' : ''}"><i>3</i>${slipped ? 'Verifying' : 'Confirmed'}</span>
         </div>
 
         ${slipped ? `
         <div class="px-card px-ok">
-          <span class="px-big-tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-          <h3>Slip received</h3>
-          <p>We'll check the payment and send your tickets to <b>${esc(b.customer.email || 'your email')}</b>.</p>
+          <span class="px-verify"><span class="px-ring"></span><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <h3>Verifying your payment<span class="px-dots"><i>.</i><i>.</i><i>.</i></span></h3>
+          <p>Slip received. Our admin will check reference <b>${b.ref}</b> in the school's bank account, then email your tickets to <b>${esc(b.customer.email || 'your email')}</b>.</p>
+          <div class="px-eta">Usually within a few hours · you can close this page</div>
           <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">My tickets</a>
         </div>` : ''}
 
@@ -861,8 +862,8 @@
     return `
       <div class="bk-wait bank-mini">
         ${b.slipAt ? '<span class="spin"></span>' : '<span class="bank-ic"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg></span>'}
-        <div><b>${b.slipAt ? 'Slip received: the school is checking your payment' : `Waiting for your transfer of ${rs(b.amount)}`}</b>
-          <p>Seats ${b.tickets.map(t => t.seat).join(', ')} ${b.slipAt ? 'are held for you. Your tickets will appear here once confirmed.' : `are held until ${new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${timeLeft(b.expiresAt)}).`}</p></div>
+        <div><b>${b.slipAt ? 'Verifying your payment…' : `Waiting for your transfer of ${rs(b.amount)}`}</b>
+          <p>Seats ${b.tickets.map(t => t.seat).join(', ')} ${b.slipAt ? 'are held for you. Our admin is checking your bank reference, and we\'ll email your tickets shortly.' : `are held until ${new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${timeLeft(b.expiresAt)}).`}</p></div>
         <button class="btn ${b.slipAt ? 'btn-ghost' : 'btn-gold'} btn-sm" type="button" data-pay="${b.ref}">${b.slipAt ? 'View payment' : 'Pay now'}</button>
       </div>`;
   }
@@ -933,7 +934,7 @@
       const b = await Backend.uploadSlip(inp.dataset.slip, file);
       bookings = bookings.map(x => x.ref === b.ref ? b : x);
       location.hash === '#pay' ? renderPay() : renderTickets();
-      toast('Slip received. The school will confirm your booking soon.');
+      toast('Slip received! We\'ll verify it and email your tickets.');
     } catch (e) {
       btn.classList.remove('busy'); lbl.textContent = 'Upload payment slip';
       toast(e.message || 'Could not upload the slip. Please try again.');
