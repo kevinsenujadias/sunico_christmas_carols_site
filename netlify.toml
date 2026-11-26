@@ -7,6 +7,12 @@
   node_bundler = "esbuild"
 
 # short link used inside the ticket QR codes: /v?t=...&s=...  -> the verification page
+# short private booking link used in SMS: /b/WV-XXXXXX/<key>
+[[redirects]]
+  from = "/b/:ref/:key"
+  to = "/?booking=:ref&key=:key"
+  status = 302
+
 [[redirects]]
   from = "/v"
   to = "/verify.html"

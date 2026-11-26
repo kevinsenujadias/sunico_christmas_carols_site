@@ -93,7 +93,8 @@ window.Backend = (function () {
       },
       async cashSale(seats, customer) { const r = await staff({ action: 'cash', seats, customer }); return Object.assign(norm(r.booking), { emailResult: r.email }); },
       async resendEmail(ref) { return (await staff({ action: 'email', ref })).result; },
-      async approveTransfer(ref, note) { const r = await staff({ action: 'approve', ref, note }); return Object.assign(norm(r.booking), { emailResult: r.email }); },
+      async approveTransfer(ref, note) { const r = await staff({ action: 'approve', ref, note }); return Object.assign(norm(r.booking), { emailResult: r.email, smsResult: r.sms }); },
+      async resendSms(ref) { return (await staff({ action: 'sms', ref })).result; },
       async rejectTransfer(ref, note) { return norm((await staff({ action: 'reject', ref, note })).booking); },
       async slipLink(ref) { return staff({ action: 'slip', ref }); },
       async reset() { /* no reset on the real system */ }

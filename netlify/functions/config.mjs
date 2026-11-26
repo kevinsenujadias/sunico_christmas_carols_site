@@ -1,6 +1,7 @@
 // GET /.netlify/functions/config — tells the website what is switched on. Never returns a secret.
 import { json, isConfigured, isSandbox, monthlyCap, holdMinutes, env, methods, payhereOn, bankDetails, bankHoldHours, testMode } from '../lib/http.mjs';
 import { emailConfigured } from '../lib/email.mjs';
+import { smsConfigured } from '../lib/sms.mjs';
 export default async () => {
   const ready = isConfigured();
   return json({
@@ -14,5 +15,6 @@ export default async () => {
     monthlyCap: monthlyCap(),
     holdMinutes: holdMinutes(),
     email: emailConfigured(),
+    sms: smsConfigured(),
   });
 };

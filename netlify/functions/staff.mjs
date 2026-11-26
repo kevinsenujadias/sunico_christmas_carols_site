@@ -8,11 +8,14 @@ import { seatInfo } from '../lib/hall.mjs';
 import { rpc } from '../lib/supabase.mjs';
 import { addVerify, siteOrigin } from '../lib/tickets.mjs';
 import { sendConfirmation } from '../lib/email.mjs';
+import { sendSms } from '../lib/sms.mjs';
 import { slipLink } from '../lib/storage.mjs';
 import { tryPin, makePass, passOk, pinStrongEnough } from '../lib/staffauth.mjs';
 import { clean } from '../lib/order.mjs';
 
 const refOf = v => String(v || '').toUpperCase().trim().slice(0, 20);
+// the full booking (with its private key) for building the buyer's link
+const full = ref => rpc('wv_email_payload', { p_ref: ref });
 const mail = (ref, req) => sendConfirmation(ref, siteOrigin(req)).catch(e => (console.error('[email]', e.message), 'failed'));
 
 export default async (req) => {
@@ -45,12 +48,23 @@ export default async (req) => {
         return json({ url: await slipLink(path), pdf: path.endsWith('.pdf') });
       }
       case 'approve': {
+        const before = await full(refOf(body.ref));
         const booking = await rpc('wv_approve_transfer', { p_ref: refOf(body.ref), p_note: clean(body.note, 200) });
         const email = booking.customer?.email ? await mail(booking.ref, req) : 'no-email';
-        return json({ booking: addVerify(booking, siteOrigin(req)), email });
+        const sms = before?.status !== 'paid' ? await sendSms('approved', await full(booking.ref), siteOrigin(req)) : 'already';
+        return json({ booking: addVerify(booking, siteOrigin(req)), email, sms });
       }
-      case 'reject':
-        return json({ booking: await rpc('wv_reject_transfer', { p_ref: refOf(body.ref), p_note: clean(body.note, 200) }) });
+      case 'reject': {
+        const booking = await rpc('wv_reject_transfer', { p_ref: refOf(body.ref), p_note: clean(body.note, 200) });
+        const sms = await sendSms('rejected', await full(booking.ref), siteOrigin(req));
+        return json({ booking, sms });
+      }
+      case 'sms': {                                         // staff: text the ticket link again
+        const b = await full(refOf(body.ref));
+        if (!b) return fail('NO_BOOKING', 'Booking not found.', 404);
+        if (!['paid', 'cash'].includes(b.status)) return fail('NOT_PAID', 'This booking is not paid yet.', 409);
+        return json({ result: await sendSms(b.status === 'cash' ? 'cash' : 'approved', b, siteOrigin(req)) });
+      }
 
       case 'cash': {
         const seats = [...new Set(body.seats || [])].slice(0, 20).map(seatInfo);
@@ -61,7 +75,8 @@ export default async (req) => {
         const booking = await rpc('wv_record_cash_sale', { p_ref: newRef(), p_access_key: newKey(),
           p_amount: seats.reduce((a, s) => a + s.price, 0), p_seats: seats, p_customer: customer });
         const email = customer.email ? await mail(booking.ref, req) : 'no-email';
-        return json({ booking: addVerify(booking, siteOrigin(req)), email });
+        const sms = customer.phone ? await sendSms('cash', await full(booking.ref), siteOrigin(req)) : 'no-mobile';
+        return json({ booking: addVerify(booking, siteOrigin(req)), email, sms });
       }
       default: return fail('ACTION', 'Unknown action');
     }

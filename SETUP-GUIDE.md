@@ -22,6 +22,19 @@ so they can only be changed by a code change pushed to GitHub. Nobody can change
 
 Optional Netlify variables: `BANK_HOLD_HOURS` (default `24`), `PAYMENT_METHODS` (default `bank`), `STAFF_SESSION_HOURS` (default `12`).
 
+### SMS (Text.lk or Notify.lk)
+Parents get a text with a private link to their booking:
+- slip uploaded → "slip received, we're verifying it"
+- approved → "payment approved, here are your tickets"
+- rejected → reason + help email
+- office cash sale → ticket link (if a phone number is entered)
+Staff can re-send the link from the check-in result ("Text ticket link").
+
+**Text.lk** (used if set): Developers → API key → Netlify variable `TEXTLK_API_KEY` (tick secret).
+Later, when the sender name is approved: `SMS_SENDER_ID` = `SUNICO`. Until then texts come from `TextLKDemo` (testing only).
+**Notify.lk** (alternative): `NOTIFY_USER_ID`, `NOTIFY_API_KEY`, `NOTIFY_SENDER_ID`.
+No SMS settings = no texts, nothing else breaks. Redeploy after adding.
+
 ### After pulling this version: run the database file again
 Supabase → SQL Editor → paste all of `supabase/schema.sql` → Run. It adds the bank-transfer parts and the
 private `slips` bucket, and keeps all existing bookings. Safe to run more than once.

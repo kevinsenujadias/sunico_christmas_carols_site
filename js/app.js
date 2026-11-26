@@ -1024,7 +1024,8 @@
     try {
       if (act === 'approve-yes') {
         const nb = await DB.approveTransfer(ref, note);
-        toast(`<b>${ref}</b> approved. ${nb.emailResult === 'sent' ? 'Tickets emailed to the buyer.' : 'Tickets are ready on their booking page.'}`);
+        const sent = [nb.emailResult === 'sent' && 'emailed', nb.smsResult === 'sent' && 'texted'].filter(Boolean).join(' and ');
+        toast(`<b>${ref}</b> approved. ${sent ? `Tickets ${sent} to the buyer.` : 'Tickets are ready on their booking page.'}`);
       } else {
         await DB.rejectTransfer(ref, note);
         toast(`<b>${ref}</b> rejected. Seats released.`);
@@ -1135,7 +1136,8 @@
       const tks = ticket ? [ticket] : booking.tickets;
       body = `
         <div class="ci-who"><b>${esc(fullName(booking))}</b><span>${esc(booking.customer.phone)} · ${booking.ref} · ${statusLabel(booking)}</span>
-          ${Backend.live && booking.customer.email && isValid(booking) ? `<button class="link-btn" data-resend="${booking.ref}">${booking.emailSentAt ? 'Resend' : 'Send'} tickets to ${esc(booking.customer.email)}</button>` : ''}</div>
+          ${Backend.live && booking.customer.email && isValid(booking) ? `<button class="link-btn" data-resend="${booking.ref}">${booking.emailSentAt ? 'Resend' : 'Send'} tickets to ${esc(booking.customer.email)}</button>` : ''}
+          ${Backend.live && Backend.config?.sms && booking.customer.phone && isValid(booking) ? `<button class="link-btn" data-sms="${booking.ref}">Text ticket link to ${esc(booking.customer.phone)}</button>` : ''}</div>
         <ul class="ci-tickets">${tks.map(t => `
           <li class="${t.tier}">
             <span class="seat-tag ${t.tier}">${t.seat}</span>
@@ -1258,6 +1260,13 @@
       $('#ciResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     $('#ciResult').addEventListener('click', async e => {
+      const sm = e.target.closest('[data-sms]');
+      if (sm) {
+        sm.disabled = true; sm.textContent = 'Sending…';
+        try { const r = await DB.resendSms(sm.dataset.sms); sm.textContent = r === 'sent' ? 'SMS sent ✓' : r === 'no-mobile' ? 'Not a Sri Lankan mobile number' : `Not sent (${r})`; }
+        catch (err) { sm.textContent = 'Failed: ' + err.message; }
+        return;
+      }
       const rsd = e.target.closest('[data-resend]');
       if (rsd) {
         rsd.disabled = true; rsd.textContent = 'Sending…';
