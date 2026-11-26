@@ -429,7 +429,7 @@
       <div class="page-head">
         <button class="back-btn" data-go="home" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Home</button>
         <p class="eyebrow">Staff only</p>
-        <h2>Bookings &amp; <em>door check-in</em></h2>
+        <h2>Staff <em>desk</em></h2>
       </div>
 
       <div class="admin-gate" id="adminGate">
@@ -444,61 +444,78 @@
       </div>
 
       <div class="admin" id="adminPanel" hidden>
-        <div class="stats" id="stats"></div>
+        <div class="st-bar">
+          <div class="st-sum" id="stSum"></div>
+          <button class="btn btn-ghost btn-sm" id="lockBtn" type="button"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Lock</button>
+        </div>
 
-        <div class="tr-card" id="trCard" hidden>
-          <div class="tr-head">
-            <h3>Bank transfers to confirm <small id="trCount"></small></h3>
-            <div class="tr-filter" role="tablist">
-              <button class="on" data-tr="slip" type="button">Slip sent</button>
-              <button data-tr="noslip" type="button">No slip yet</button>
+        <nav class="st-tabs" id="stTabs">
+          <button data-st="approve" type="button"><span class="st-ic"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg></span><b>Approve payments</b><i class="st-badge" id="stApproveN"></i></button>
+          <button data-st="scan" type="button"><span class="st-ic"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg></span><b>Scan tickets</b><i class="st-sub" id="stScanN"></i></button>
+          <button data-st="cash" type="button"><span class="st-ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><b>Office sale</b><i class="st-sub">Cash</i></button>
+          <button data-st="list" type="button"><span class="st-ic"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span><b>All bookings</b><i class="st-sub" id="stListN"></i></button>
+        </nav>
+
+        <!-- 1. APPROVE -->
+        <section class="st-pane" data-pane="approve">
+          <div class="tr-card" id="trCard">
+            <div class="tr-head">
+              <div class="tr-filter" role="tablist">
+                <button class="on" data-tr="slip" type="button">Slip sent</button>
+                <button data-tr="noslip" type="button">No slip yet</button>
+              </div>
+            </div>
+            <p class="st-tip">Check the <b>school bank app</b> for the <b>amount</b> + <b>booking number</b>, then press Approve.</p>
+            <div class="tr-list" id="trList"></div>
+          </div>
+        </section>
+
+        <!-- 2. SCAN -->
+        <section class="st-pane" data-pane="scan">
+          <div class="checkin">
+            <div class="ci-left">
+              <button class="st-big" id="scanBtn" type="button"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg><span>Scan QR code</span></button>
+              <div class="ci-cam" id="ciCam" hidden><video id="ciVideo" playsinline muted></video><span class="ci-frame"></span></div>
+              <p class="st-or">or type the number</p>
+              <form id="ciForm" class="ci-form">
+                <input id="ciInput" placeholder="WV-XXXXXX" autocomplete="off" style="text-transform:uppercase" />
+                <button class="btn btn-gold" type="submit">Find</button>
+              </form>
+            </div>
+            <div class="ci-result" id="ciResult" hidden></div>
+          </div>
+        </section>
+
+        <!-- 3. OFFICE SALE -->
+        <section class="st-pane" data-pane="cash">
+          <div class="cash-card">
+            <p class="st-tip">Sold a ticket at the school office? Enter it here so the seat can't be sold online.</p>
+            <form id="cashForm" class="cash-form" autocomplete="off">
+              <label class="field"><span>Seats</span><input name="seats" required placeholder="e.g. C4, C5" style="text-transform:uppercase" /></label>
+              <label class="field"><span>Buyer name</span><input name="name" placeholder="optional" /></label>
+              <label class="field"><span>Mobile</span><input name="phone" type="tel" placeholder="optional · gets the ticket link by SMS" /></label>
+              <label class="field"><span>Email</span><input name="email" type="email" placeholder="optional" /></label>
+              <button class="btn btn-gold btn-block" type="submit">Mark as sold</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- 4. ALL BOOKINGS -->
+        <section class="st-pane" data-pane="list">
+          <div class="stats" id="stats"></div>
+          <div class="bk-table-card">
+            <div class="bk-tools">
+              <input id="bkSearch" placeholder="Search name, phone, booking no. or seat" />
+              <button class="btn btn-gold btn-sm" id="csvBtn" type="button">Download Excel (CSV)</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Booking</th><th>Name</th><th>Contact</th><th>Seats</th><th>Amount</th><th>Payment</th><th>In</th><th>Booked</th></tr></thead>
+                <tbody id="bkBody"></tbody>
+              </table>
             </div>
           </div>
-          <p class="lead small">Open the school bank account (app or statement). Find a payment with this <b>exact amount</b> and <b>booking number</b> in the remarks, then press <b>Approve</b>. The tickets are emailed automatically. A slip photo alone is <b>not</b> proof: always check the bank.</p>
-          <div class="tr-list" id="trList"></div>
-        </div>
-
-        <div class="checkin">
-          <div class="ci-left">
-            <h3>Door check-in</h3>
-            <p class="lead small">Scan the QR on the ticket (or on the email), or type the ticket number (e.g. <span class="mono">WV-7K3QX9-C4</span>) or a booking number to see all its tickets.</p>
-            <form id="ciForm" class="ci-form">
-              <input id="ciInput" placeholder="Ticket or booking number" autocomplete="off" style="text-transform:uppercase" />
-              <button class="btn btn-gold" type="submit">Check in</button>
-            </form>
-            <button class="btn btn-ghost btn-block" id="scanBtn" type="button">Scan QR with camera</button>
-            <div class="ci-cam" id="ciCam" hidden><video id="ciVideo" playsinline muted></video><span class="ci-frame"></span></div>
-          </div>
-          <div class="ci-result" id="ciResult" hidden></div>
-        </div>
-
-        <div class="cash-card">
-          <h3>Record an office (cash) sale</h3>
-          <p class="lead small">Seats sold at the school office must be recorded here, so nobody can buy them online.</p>
-          <form id="cashForm" class="cash-form" autocomplete="off">
-            <label class="field"><span>Seats</span><input name="seats" required placeholder="e.g. C4, C5" style="text-transform:uppercase" /></label>
-            <label class="field"><span>Buyer name</span><input name="name" placeholder="optional" /></label>
-            <label class="field"><span>Phone</span><input name="phone" type="tel" placeholder="optional" /></label>
-            <label class="field"><span>Email</span><input name="email" type="email" placeholder="optional · sends the tickets" /></label>
-            <button class="btn btn-gold" type="submit">Mark as sold</button>
-          </form>
-        </div>
-
-        <div class="bk-table-card">
-          <div class="bk-tools">
-            <h3>All bookings <small id="bkCount"></small></h3>
-            <input id="bkSearch" placeholder="Search name, phone, booking no. or seat" />
-            <button class="btn btn-ghost btn-sm" id="csvBtn">Export CSV</button>
-            <button class="btn btn-ghost btn-sm" id="lockBtn">Lock</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Booking</th><th>Name</th><th>Contact</th><th>Seats</th><th>Amount</th><th>Payment</th><th>In</th><th>Booked</th></tr></thead>
-              <tbody id="bkBody"></tbody>
-            </table>
-          </div>
-
-        </div>
+        </section>
       </div>
     </section>
   </main>

@@ -964,14 +964,20 @@
   let staffOpen = sessionStorage.getItem('wv_staff') === '1';
   let adminQuery = '';
 
+  /* ---------- staff desk tabs ---------- */
+  let stTab = sessionStorage.getItem('wv_st_tab') || '';
+  function setStTab(t) {
+    stTab = t; sessionStorage.setItem('wv_st_tab', t);
+    $$('#stTabs [data-st]').forEach(b => b.classList.toggle('on', b.dataset.st === t));
+    $$('#adminPanel .st-pane').forEach(p => p.hidden = p.dataset.pane !== t);
+    if (t !== 'scan') stopScan();
+  }
+
   /* ---------- bank transfers waiting for staff ---------- */
   let trTab = 'slip';
   function renderTransfers(list) {
-    const card = $('#trCard');
-    card.hidden = !(Backend.live && Backend.methods.includes('bank'));
-    if (card.hidden) return;
+    if (!Backend.live) { $('#trList').innerHTML = '<p class="tr-empty">Bank transfers appear here on the live site.</p>'; return; }
     const withSlip = list.filter(b => b.slipAt), noSlip = list.filter(b => !b.slipAt);
-    $('#trCount').textContent = list.length ? `${list.length} waiting` : '';
     $$('#trCard [data-tr]').forEach(x => {
       x.classList.toggle('on', x.dataset.tr === trTab);
       x.textContent = (x.dataset.tr === 'slip' ? 'Slip sent' : 'No slip yet') + ` (${(x.dataset.tr === 'slip' ? withSlip : noSlip).length})`;
@@ -987,9 +993,9 @@
           <div class="tr-time">${b.slipAt ? `Slip sent ${fmtDate(b.slipAt)}` : `Booked ${fmtDate(b.createdAt)} · ${timeLeft(b.expiresAt)}`}</div>
         </div>
         <div class="tr-actions">
-          ${b.slipAt ? `<button class="btn btn-ghost btn-sm" data-act="slip" type="button">View slip</button>` : ''}
-          <button class="btn btn-gold btn-sm" data-act="approve" type="button">Approve</button>
-          <button class="btn btn-ghost btn-sm tr-reject" data-act="reject" type="button">Reject</button>
+          ${b.slipAt ? `<button class="btn btn-ghost" data-act="slip" type="button">View slip</button>` : ''}
+          <button class="btn tr-ok" data-act="approve" type="button">✓ Approve</button>
+          <button class="btn btn-ghost tr-reject" data-act="reject" type="button">✕</button>
         </div>
         <div class="tr-confirm" hidden></div>
       </div>`).join('')
@@ -1075,6 +1081,12 @@
     const issues = staffBookings.filter(b => ['paid_conflict', 'chargedback'].includes(b.status)).length;
     const left = Object.fromEntries(TIER_KEYS.map(k => [k, 0]));
     seats.forEach(s => { if (!s.taken) left[s.tier]++; });
+    // top summary + tab counts
+    $('#stSum').innerHTML = `<span><b>${tickets.length}</b> sold</span><span><b>${rs(bankIn + online + office)}</b> received</span><span><b>${inside}</b> inside</span>`;
+    $('#stApproveN').textContent = trWaiting.filter(b => b.slipAt).length || '';
+    $('#stScanN').textContent = `${inside} / ${tickets.length} in`;
+    $('#stListN').textContent = `${staffBookings.length}`;
+    if (!stTab) setStTab(trWaiting.some(b => b.slipAt) ? 'approve' : 'scan');
     $('#stats').innerHTML = `
       <div><small>Tickets sold</small><b>${tickets.length}</b>${issues ? `<small class="warn-txt">${issues} need attention</small>` : ''}</div>
       ${Backend.methods.includes('payhere') ? `<div><small>Online (PayHere)</small><b>${rs(online)}</b><small>limit ${rs(Backend.config.monthlyCap)} / month</small></div>` : ''}
@@ -1088,7 +1100,7 @@
     const q = adminQuery.toLowerCase().replace(/\s+/g, '');
     const rows = staffBookings.filter(b => !q || [b.ref, fullName(b), b.customer.phone, b.customer.email, b.customer.student, b.paymentId, ...b.tickets.map(t => t.seat)]
       .join('|').toLowerCase().replace(/\s+/g, '').includes(q));
-    $('#bkCount').textContent = `${rows.length} of ${staffBookings.length}`;
+    $('#stListN').textContent = adminQuery ? `${rows.length} of ${staffBookings.length}` : `${staffBookings.length}`;
     $('#bkBody').innerHTML = rows.length ? rows.map(b => {
       const ins = b.tickets.filter(t => t.checkedInAt).length;
       return `<tr class="bk-row" data-ref="${b.ref}">
@@ -1186,7 +1198,7 @@
       return;
     }
     video.srcObject = camStream; await video.play();
-    wrap.hidden = false; $('#scanBtn').textContent = 'Stop camera';
+    wrap.hidden = false; $('#scanBtn span').textContent = 'Stop camera'; $('#scanBtn').classList.add('on');
     const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
     let last = '', lastAt = 0;
     (function loop() {
@@ -1207,7 +1219,7 @@
   function stopScan() {
     cancelAnimationFrame(camRaf);
     camStream?.getTracks().forEach(t => t.stop()); camStream = null;
-    $('#ciCam').hidden = true; $('#scanBtn').textContent = 'Scan QR with camera';
+    $('#ciCam').hidden = true; $('#scanBtn span').textContent = 'Scan QR code'; $('#scanBtn').classList.remove('on');
   }
 
   function exportCSV() {
@@ -1233,6 +1245,7 @@
     $('#pinInput').addEventListener('input', e => e.target.classList.remove('bad'));
     $('#lockBtn').onclick = () => staffLock();
     $('#trCard').addEventListener('click', transferAction);
+    $('#stTabs').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (b) setStTab(b.dataset.st); });
     $('#slipClose').onclick = () => { $('#slipModal').hidden = true; $('#slipView').innerHTML = ''; };
     $('#slipModal').addEventListener('click', e => { if (e.target.id === 'slipModal') $('#slipClose').click(); });
 

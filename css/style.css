@@ -1478,3 +1478,68 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
 .px-dots i:nth-child(2){animation-delay:.2s}.px-dots i:nth-child(3){animation-delay:.4s}
 @keyframes dot{40%{opacity:1}80%,100%{opacity:0}}
 .px-eta{font-size:.8rem;color:var(--dim);padding:.3rem .8rem;border-radius:99px;background:rgba(255,255,255,.05)}
+
+/* =========================================================
+   STAFF DESK: 4 big buttons, one job at a time
+   ========================================================= */
+#view-admin .page-head{padding-bottom:.8rem}
+.admin{max-width:1100px;margin:0 auto;gap:1rem}
+.st-bar{display:flex;align-items:center;gap:.8rem}
+.st-sum{flex:1;display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.92rem;color:var(--muted)}
+.st-sum b{color:var(--text);font-size:1.1rem}
+.st-bar .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;margin-right:.3rem;vertical-align:-3px}
+.st-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem}
+.st-tabs button{position:relative;display:grid;justify-items:center;gap:.35rem;padding:1.1rem .6rem;border-radius:20px;border:1.5px solid var(--line-2);
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));color:var(--text);text-align:center;transition:.2s}
+.st-tabs button:hover{border-color:var(--gold)}
+.st-tabs button.on{border-color:var(--gold);background:linear-gradient(160deg,rgba(231,189,90,.22),rgba(231,189,90,.06));box-shadow:0 12px 30px -16px rgba(231,189,90,.7)}
+.st-ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:rgba(231,189,90,.14);color:var(--gold-2)}
+.st-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.st-tabs b{font-size:1rem}
+.st-sub{font-style:normal;font-size:.78rem;color:var(--muted)}
+.st-badge{position:absolute;top:.6rem;right:.7rem;font-style:normal;min-width:26px;height:26px;padding:0 .45rem;border-radius:99px;display:grid;place-items:center;
+  background:#e8203f;color:#fff;font-weight:800;font-size:.85rem;animation:nowPulse 1.8s infinite}
+.st-badge:empty{display:none}
+.st-pane[hidden]{display:none!important}
+.st-tip{font-size:.92rem;color:var(--muted);margin-bottom:.8rem}
+.st-tip b{color:var(--text)}
+.tr-card{border-color:var(--line-2)}
+.tr-head{justify-content:flex-start}
+.tr-row{padding:1rem 1.1rem}
+.tr-actions .btn{padding:.75rem 1.1rem}
+.tr-ok{background:#2fd17a;color:#062012;font-weight:800;border:0}
+.tr-ok:hover{filter:brightness(1.08)}
+.tr-reject{padding:.75rem .95rem!important}
+.checkin{grid-template-columns:1fr 1fr}
+.st-big{width:100%;display:flex;align-items:center;justify-content:center;gap:.7rem;padding:1.4rem;border-radius:20px;font-size:1.2rem;font-weight:800;
+  background:linear-gradient(135deg,#f6dc93,#e7bd5a);color:#1a1204;box-shadow:0 14px 34px -14px rgba(231,189,90,.7)}
+.st-big svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2.2}
+.st-big.on{background:#c8102e;color:#fff}
+.st-or{text-align:center;color:var(--dim);font-size:.85rem;margin:.9rem 0 .5rem}
+.ci-left{display:grid;gap:.2rem;align-content:start}
+.cash-card{max-width:560px}
+.cash-form{grid-template-columns:1fr}
+.bk-tools input{flex:1}
+@media (max-width:860px){
+  .st-tabs{grid-template-columns:1fr 1fr}
+  .checkin{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .st-tabs button{padding:.9rem .4rem}
+  .st-ic{width:40px;height:40px}.st-ic svg{width:22px;height:22px}
+  .st-tabs b{font-size:.9rem}
+  .tr-actions{display:grid;grid-template-columns:1fr 1fr auto}
+  .tr-actions .btn:only-of-type{grid-column:1/-1}
+}
+@media (max-width:560px){
+  .st-tabs{gap:.5rem}
+  .st-tabs button{grid-template-columns:auto 1fr;justify-items:start;text-align:left;gap:0 .55rem;padding:.7rem .7rem;border-radius:16px}
+  .st-tabs .st-ic{grid-row:span 2;width:36px;height:36px;border-radius:11px}
+  .st-tabs .st-ic svg{width:20px;height:20px}
+  .st-tabs b{font-size:.86rem;line-height:1.15;align-self:end}
+  .st-sub{align-self:start;font-size:.72rem}
+  .st-badge{top:.4rem;right:.45rem;min-width:22px;height:22px;font-size:.75rem}
+  .st-bar{align-items:flex-start}
+  .st-sum{font-size:.85rem}.st-sum b{font-size:1rem}
+  #view-admin .page-head h2{font-size:2rem}
+}
