@@ -49,7 +49,11 @@ export async function sendSms(kind, b, origin) {
     }
     const d = await res.json().catch(() => ({}));
     ok = res.ok && d.status === 'success';
-    if (!ok) { console.error('[sms]', provider(), res.status, JSON.stringify(d).slice(0, 200)); return 'failed'; }
+    if (!ok) {
+      console.error('[sms]', provider(), res.status, JSON.stringify(d).slice(0, 300));
+      const why = String(d.message || d.error || d.data || `HTTP ${res.status}`).replace(/\s+/g, ' ').slice(0, 140);
+      return `failed: ${why}`;                // e.g. "failed: Insufficient balance" — shown to staff
+    }
     return 'sent';
-  } catch (e) { console.error('[sms]', e.message); return 'failed'; }
+  } catch (e) { console.error('[sms]', e.message); return 'failed: could not reach the SMS service'; }
 }

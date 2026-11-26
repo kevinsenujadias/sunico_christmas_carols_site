@@ -17,6 +17,7 @@ window.Backend = (function () {
   let staffCache = [];
 
   const keys = () => { try { return JSON.parse(localStorage.getItem(KEYS)) || {}; } catch { return {}; } };
+  const forget = ref => { const k = keys(); delete k[ref]; try { localStorage.setItem(KEYS, JSON.stringify(k)); } catch {} };
   const remember = (ref, key) => { const k = keys(); k[ref] = key; try { localStorage.setItem(KEYS, JSON.stringify(k)); } catch {} };
 
   async function call(name, { method = 'GET', body, query = '', headers = {} } = {}) {
@@ -66,7 +67,8 @@ window.Backend = (function () {
       async all() {                                   // MY bookings (this phone)
         const k = keys();
         const list = await Promise.all(Object.entries(k).map(([ref, key]) =>
-          call('booking', { query: `?ref=${encodeURIComponent(ref)}&key=${encodeURIComponent(key)}` }).then(r => norm(r.booking)).catch(() => null)));
+          call('booking', { query: `?ref=${encodeURIComponent(ref)}&key=${encodeURIComponent(key)}` }).then(r => norm(r.booking))
+            .catch(e => { if (e.status === 404) forget(ref); return null; })));   // deleted booking: stop asking for it
         return list.filter(Boolean);
       },
       async bookedSeatIds() { return (await call('seats')).taken || []; },

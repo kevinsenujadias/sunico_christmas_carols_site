@@ -1033,7 +1033,8 @@
         const nb = await DB.approveTransfer(ref, note);
         toast(nb.smsResult === 'sent'
           ? `✓ <b>${ref}</b> approved. Tickets sent by SMS to ${esc(nb.customer.phone)}. Nothing else to do.`
-          : `✓ <b>${ref}</b> approved. Tickets are on the buyer's booking page${nb.emailResult === 'sent' ? ' and emailed' : ''}.${nb.smsResult === 'no-mobile' ? ' (Not a mobile number, so no SMS.)' : ''}`);
+          : `✓ <b>${ref}</b> approved. Tickets are on the buyer's booking page.${nb.smsResult === 'no-mobile' ? ' (Not a mobile number, so no SMS.)'
+              : String(nb.smsResult).startsWith('failed') ? ` <b>SMS not sent</b>: Text.lk says "${esc(String(nb.smsResult).replace(/^failed:\s*/, ''))}".` : ''}`);
       } else {
         await DB.rejectTransfer(ref, note);
         toast(`<b>${ref}</b> rejected. Seats released.`);
@@ -1280,8 +1281,9 @@
         sm.disabled = true; lbl.textContent = 'Sending…';
         try {
           const r = await DB.resendSms(sm.dataset.sms);
-          lbl.textContent = r === 'sent' ? 'SMS sent ✓' : r === 'no-mobile' ? 'Not a mobile number' : r === 'not-configured' ? 'SMS not set up yet' : 'Could not send, try again';
+          lbl.textContent = r === 'sent' ? 'SMS sent ✓' : r === 'no-mobile' ? 'Not a mobile number' : r === 'not-configured' ? 'SMS not set up yet' : 'Not sent, try again';
           if (r === 'sent') sm.classList.add('done'); else sm.disabled = false;
+          if (String(r).startsWith('failed')) toast('SMS not sent. Text.lk says: <b>' + esc(String(r).replace(/^failed:\s*/, '')) + '</b>');
         } catch (err) { lbl.textContent = 'Could not send, try again'; sm.disabled = false; }
         return;
       }
