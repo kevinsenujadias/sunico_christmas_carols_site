@@ -1579,3 +1579,18 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
   [data-pane=list] .c-date small{white-space:nowrap}
   [data-pane=list] tbody td,[data-pane=list] thead th{padding-left:.8rem;padding-right:.8rem}
 }
+/* staff: fix gallery style leaking onto the Gold "seats left" count */
+.stats .left .g{border:0;border-radius:0;overflow:visible;cursor:default;box-shadow:none;transform:none;position:static}
+.stats .left .g::after{display:none}
+/* proper gaps between blocks */
+.st-pane{display:grid;gap:1.4rem}
+.admin{gap:1.4rem}
+[data-pane=list] .stats{gap:1rem}
+[data-pane=list] .bk-tools{margin-bottom:1.1rem;gap:1rem}
+/* seat numbers: plain, clear text (no pills) */
+[data-pane=list] .c-seats .seat-tag,.tr-seats .seat-tag{background:none!important;border:0;padding:0;margin:0 .7rem 0 0!important;font-size:1rem;font-weight:800;letter-spacing:.03em;box-shadow:none}
+[data-pane=list] .seat-tag.vip,.tr-seats .seat-tag.vip{color:#c9a6ff}
+[data-pane=list] .seat-tag.gold,.tr-seats .seat-tag.gold{color:var(--gold-2)}
+[data-pane=list] .seat-tag.silver,.tr-seats .seat-tag.silver{color:#e3e8f2}
+[data-pane=list] .seat-tag.bronze,.tr-seats .seat-tag.bronze{color:#e0a47a}
+[data-pane=list] .seat-tag.in{text-decoration:line-through;opacity:.6}
