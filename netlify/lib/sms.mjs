@@ -19,8 +19,8 @@ export function lkMobile(raw) {
 export const bookingLink = (origin, ref, key) => `${origin}/b/${encodeURIComponent(ref)}/${encodeURIComponent(key)}`;
 
 const TEXTS = {
-  slip:     (b, link) => `Winter Vespers: slip received. We're verifying it & will send your tickets soon: ${link}`,
-  approved: (b, link) => `SUNICO Winter Vespers: Payment approved! Your ${b.tickets.length} ticket${b.tickets.length > 1 ? 's' : ''} for 18 Dec, Namal Hall: ${link}`,
+  slip:     (b) => `SUNICO Winter Vespers: We received your payment slip for ${b.ref}. It is under review by the SUNICO admin. Your tickets will be sent once it is verified.`,
+  approved: (b, link) => `SUNICO Winter Vespers: Payment verified! Your ${b.tickets.length > 1 ? b.tickets.length + ' tickets' : 'ticket'} for 18 Dec, Namal Hall: ${link}`,
   cash:     (b, link) => `SUNICO Winter Vespers: Thank you! Your ${b.tickets.length} ticket${b.tickets.length > 1 ? 's' : ''} for 18 Dec, Namal Hall: ${link}`,
   rejected: (b) => `SUNICO Winter Vespers: Booking ${b.ref} was not approved (${String(b.review_note || 'transfer not received').slice(0, 45)}). Seats released. Help: sunico2023@gmail.com`,
 };
