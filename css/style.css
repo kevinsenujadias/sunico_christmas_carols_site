@@ -1543,3 +1543,39 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
   .st-sum{font-size:.85rem}.st-sum b{font-size:1rem}
   #view-admin .page-head h2{font-size:2rem}
 }
+
+/* All bookings: bigger, clearer */
+[data-pane=list] .stats>div{padding:1.1rem 1.2rem}
+[data-pane=list] .stats small{font-size:.78rem;letter-spacing:.1em;color:#c3c9de}
+[data-pane=list] .stats b{font-size:1.9rem}
+[data-pane=list] .bk-table-card{padding:1.2rem}
+[data-pane=list] .bk-tools input{font-size:1rem;padding:.9rem 1rem}
+[data-pane=list] table{font-size:1rem;border-collapse:separate;border-spacing:0}
+[data-pane=list] thead th{font-size:.8rem;letter-spacing:.08em;color:#c3c9de;padding:.9rem 1rem;background:rgba(255,255,255,.05)}
+[data-pane=list] tbody td{padding:1.05rem 1rem;vertical-align:middle;border-top:1px solid var(--line);line-height:1.45}
+[data-pane=list] tbody tr:nth-child(even) td{background:rgba(255,255,255,.025)}
+[data-pane=list] tbody tr:hover td{background:rgba(231,189,90,.07)}
+[data-pane=list] td small{display:block;font-size:.85rem;color:#aab2ca;margin-top:.15rem}
+[data-pane=list] .c-ref{font-size:1.05rem;font-weight:700;letter-spacing:.05em;color:var(--gold-2)}
+[data-pane=list] .c-ref small{font-family:var(--f-sans);letter-spacing:0;font-weight:500}
+[data-pane=list] .c-name{font-weight:700}
+[data-pane=list] .c-amt{font-weight:700;white-space:nowrap}
+[data-pane=list] .seat-tag{font-size:.88rem;padding:.25rem .55rem}
+[data-pane=list] .status{font-size:.88rem;padding:.35rem .75rem;white-space:nowrap}
+[data-pane=list] .c-in{font-weight:700;font-size:1.05rem}
+[data-pane=list] .c-date small{color:#c3c9de;font-size:.88rem}
+@media (max-width:700px){
+  [data-pane=list] .table-wrap tr.bk-row{padding:1rem 1.05rem;gap:.35rem .8rem}
+  [data-pane=list] .table-wrap tr.bk-row td{border:0;background:none!important}
+  [data-pane=list] .stats b{font-size:1.5rem}
+}
+.admin{max-width:1280px}
+@media (min-width:701px){
+  [data-pane=list] .c-ref,[data-pane=list] .c-amt,[data-pane=list] .c-in,[data-pane=list] .c-pay{white-space:nowrap}
+  [data-pane=list] .c-seats{min-width:110px}
+  [data-pane=list] .c-seats .seat-tag{display:inline-block;margin:.12rem .2rem .12rem 0}
+  [data-pane=list] .c-name small{display:none}
+  [data-pane=list] .c-contact small{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  [data-pane=list] .c-date small{white-space:nowrap}
+  [data-pane=list] tbody td,[data-pane=list] thead th{padding-left:.8rem;padding-right:.8rem}
+}
