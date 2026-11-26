@@ -1594,3 +1594,9 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
 [data-pane=list] .seat-tag.silver,.tr-seats .seat-tag.silver{color:#e3e8f2}
 [data-pane=list] .seat-tag.bronze,.tr-seats .seat-tag.bronze{color:#e0a47a}
 [data-pane=list] .seat-tag.in{text-decoration:line-through;opacity:.6}
+.sms-btn{display:flex;align-items:center;gap:.7rem;margin-top:.8rem;padding:.75rem 1rem;border-radius:14px;border:1.5px solid var(--gold);background:rgba(231,189,90,.1);color:var(--text);text-align:left;width:100%;max-width:340px}
+.sms-btn svg{flex:none;width:26px;height:26px;fill:none;stroke:var(--gold-2);stroke-width:1.9}
+.sms-btn b{display:block;font-size:1rem}.sms-btn small{display:block;color:var(--muted);font-size:.85rem}
+.sms-btn:hover{background:rgba(231,189,90,.18)}
+.sms-btn.done{border-color:#2fd17a;background:rgba(47,209,122,.1)}.sms-btn.done svg{stroke:#2fd17a}
+.ci-who .sms-btn b{font-family:var(--f-sans);font-weight:700;font-size:1rem;color:var(--text)}
