@@ -13,8 +13,8 @@ export function checkOrder(body) {
     phone: clean(c.phone, 20), role: clean(c.role, 40), student: clean(c.student, 80),
   };
   if (!customer.first || !customer.last) return { error: fail('NAME', 'Please enter your name.') };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) return { error: fail('EMAIL', 'Please enter a valid email.') };
-  if (customer.phone.replace(/\D/g, '').length < 9) return { error: fail('PHONE', 'Please enter a valid phone number.') };
+  if (customer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) return { error: fail('EMAIL', 'Please check the email address (or leave it empty).') };
+  if (!/^(?:94|0)?7\d{8}$/.test(customer.phone.replace(/\D/g, ''))) return { error: fail('PHONE', 'Please enter a Sri Lankan mobile number, e.g. 077 123 4567.') };
 
   const ids = [...new Set((Array.isArray(body.seats) ? body.seats : []).map(s => String(s).toUpperCase()))];
   if (!ids.length) return { error: fail('NO_SEATS', 'Pick at least one seat.') };

@@ -1600,3 +1600,4 @@ img,svg,a{-webkit-user-drag:none;user-drag:none}
 .sms-btn:hover{background:rgba(231,189,90,.18)}
 .sms-btn.done{border-color:#2fd17a;background:rgba(47,209,122,.1)}.sms-btn.done svg{stroke:#2fd17a}
 .ci-who .sms-btn b{font-family:var(--f-sans);font-weight:700;font-size:1rem;color:var(--text)}
+.field span small{font-weight:500;color:var(--muted);font-size:.82em;margin-left:.3rem}

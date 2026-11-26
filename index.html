@@ -323,7 +323,7 @@
           <span class="step done">1 · Seats</span><i></i><span class="step on">2 · Details</span><i></i><span class="step">3 · Pay</span><i></i><span class="step">4 · Tickets</span>
         </div>
         <h2>Checkout</h2>
-        <p class="lead">Your tickets will be issued in this name. We'll email them to you once your payment is confirmed.</p>
+        <p class="lead">Your tickets will be issued in this name. We'll SMS your tickets to this mobile once your payment is confirmed.</p>
       </div>
 
       <div class="checkout-layout">
@@ -334,9 +334,9 @@
               <label class="field"><span>First name</span><input name="first" required autocomplete="given-name" /></label>
               <label class="field"><span>Last name</span><input name="last" required autocomplete="family-name" /></label>
             </div>
-            <label class="field"><span>Email</span><input name="email" type="email" required autocomplete="email" /></label>
+            <label class="field"><span>Mobile number <small>(tickets are sent here by SMS)</small></span><input name="phone" type="tel" required placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel" /></label>
             <div class="row2">
-              <label class="field"><span>Phone</span><input name="phone" type="tel" required placeholder="07X XXX XXXX" autocomplete="tel" /></label>
+              <label class="field"><span>Email <small>(optional)</small></span><input name="email" type="email" autocomplete="email" /></label>
               <label class="field"><span>Joining as</span>
                 <select name="role">
                   <option>Parent / Guardian</option><option>Student</option><option>Old student</option><option>Staff</option><option>Guest</option>

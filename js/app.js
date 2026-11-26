@@ -546,13 +546,14 @@
     ['first', 'last', 'email', 'phone'].forEach(n => {
       const i = f.elements[n];
       let bad = !i.value.trim();
-      if (n === 'email' && !bad) bad = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(i.value.trim());
+      if (n === 'email') bad = !!i.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(i.value.trim());   // optional, but must look right if given
+      if (n === 'phone' && !bad) bad = !/^(?:\+?94|0)?7\d{8}$/.test(i.value.replace(/[\s-]/g, ''));            // Sri Lankan mobile
       if (n === 'phone' && !bad) bad = i.value.replace(/\D/g, '').length < 9;
       i.classList.toggle('bad', bad);
       if (bad) ok = false;
     });
     const err = $('#formError');
-    if (!ok) { err.textContent = 'Please check the highlighted details.'; err.hidden = false; return false; }
+    if (!ok) { err.textContent = f.elements.phone.classList.contains('bad') ? 'Please enter a Sri Lankan mobile number (e.g. 077 123 4567). Your tickets are sent there by SMS.' : 'Please check the highlighted details.'; err.hidden = false; return false; }
     if (!f.elements.agree.checked) { err.textContent = 'Please tick the box to agree to the ticket terms.'; err.hidden = false; return false; }
     err.hidden = true; return true;
   }
@@ -778,7 +779,7 @@
     const slipped = !!b.slipAt, rejected = b.status === 'rejected', expired = b.status === 'expired';
     $('#payLead').innerHTML = rejected ? 'This booking was not approved.'
       : expired ? 'The time to pay for this booking has run out.'
-      : slipped ? 'Thank you! We\'ll email your tickets once it\'s verified.'
+      : slipped ? 'Thank you! We\'ll SMS your tickets once it\'s verified.'
       : `Send <b>${rs(b.amount)}</b> to the school account, then upload the slip.`;
     const allText = `Bank: ${bank.bank}\nBranch: ${bank.branch}\nAccount name: ${bank.accountName}\nAccount number: ${bank.accountNo}\nAmount: ${b.amount}\nRemarks: ${b.ref}`;
 
@@ -805,7 +806,7 @@
         <div class="px-card px-ok">
           <span class="px-verify"><span class="px-ring"></span><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
           <h3>Verifying your payment<span class="px-dots"><i>.</i><i>.</i><i>.</i></span></h3>
-          <p>Slip received. Our admin will check reference <b>${b.ref}</b> in the school's bank account, then email your tickets to <b>${esc(b.customer.email || 'your email')}</b>.</p>
+          <p>Slip received. Our admin will check reference <b>${b.ref}</b> in the school's bank account, then SMS your tickets to <b>${esc(b.customer.phone || 'your mobile')}</b>.</p>
           <div class="px-eta">Usually within a few hours · you can close this page</div>
           <a class="btn btn-gold btn-block" href="#tickets" data-go="tickets">My tickets</a>
         </div>` : ''}
@@ -863,7 +864,7 @@
       <div class="bk-wait bank-mini">
         ${b.slipAt ? '<span class="spin"></span>' : '<span class="bank-ic"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg></span>'}
         <div><b>${b.slipAt ? 'Verifying your payment…' : `Waiting for your transfer of ${rs(b.amount)}`}</b>
-          <p>Seats ${b.tickets.map(t => t.seat).join(', ')} ${b.slipAt ? 'are held for you. Our admin is checking your bank reference, and we\'ll email your tickets shortly.' : `are held until ${new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${timeLeft(b.expiresAt)}).`}</p></div>
+          <p>Seats ${b.tickets.map(t => t.seat).join(', ')} ${b.slipAt ? 'are held for you. Our admin is checking your bank reference, and we\'ll SMS your tickets shortly.' : `are held until ${new Date(b.expiresAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${timeLeft(b.expiresAt)}).`}</p></div>
         <button class="btn ${b.slipAt ? 'btn-ghost' : 'btn-gold'} btn-sm" type="button" data-pay="${b.ref}">${b.slipAt ? 'View payment' : 'Pay now'}</button>
       </div>`;
   }
@@ -934,7 +935,7 @@
       const b = await Backend.uploadSlip(inp.dataset.slip, file);
       bookings = bookings.map(x => x.ref === b.ref ? b : x);
       location.hash === '#pay' ? renderPay() : renderTickets();
-      toast('Slip received! We\'ll verify it and email your tickets.');
+      toast('Slip received! We\'ll verify it and SMS your tickets.');
     } catch (e) {
       btn.classList.remove('busy'); lbl.textContent = 'Upload payment slip';
       toast(e.message || 'Could not upload the slip. Please try again.');
@@ -1030,8 +1031,9 @@
     try {
       if (act === 'approve-yes') {
         const nb = await DB.approveTransfer(ref, note);
-        const sent = [nb.emailResult === 'sent' && 'emailed', nb.smsResult === 'sent' && 'texted'].filter(Boolean).join(' and ');
-        toast(`<b>${ref}</b> approved. ${sent ? `Tickets ${sent} to the buyer.` : 'Tickets are ready on their booking page.'}`);
+        toast(nb.smsResult === 'sent'
+          ? `✓ <b>${ref}</b> approved. Tickets sent by SMS to ${esc(nb.customer.phone)}. Nothing else to do.`
+          : `✓ <b>${ref}</b> approved. Tickets are on the buyer's booking page${nb.emailResult === 'sent' ? ' and emailed' : ''}.${nb.smsResult === 'no-mobile' ? ' (Not a mobile number, so no SMS.)' : ''}`);
       } else {
         await DB.rejectTransfer(ref, note);
         toast(`<b>${ref}</b> rejected. Seats released.`);
